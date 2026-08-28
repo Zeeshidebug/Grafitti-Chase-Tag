@@ -1,11 +1,10 @@
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(CharacterState))]
 [RequireComponent(typeof(PlayerInputHandler))]
 public class CharacterMovement : MonoBehaviour
 {
-    [Header("References")]
-    [SerializeField] private Transform cameraTransform;
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
@@ -19,23 +18,30 @@ public class CharacterMovement : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private float jumpHeight = 2f;
 
-    private float currentSpeed;
-
     private CharacterController characterController;
+    private PlayerMovementIntent movementIntent;
     private PlayerInputHandler inputHandler;
+    private CharacterState characterState;
 
+    private float currentSpeed;
     private float verticalVelocity;
-    private Vector3 movementDirection;
+
+    public float CurrentSpeed => currentSpeed;
+    public float VerticalVelocity => verticalVelocity; private Vector3 movementDirection;
 
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
+        movementIntent = GetComponent<PlayerMovementIntent>();
         inputHandler = GetComponent<PlayerInputHandler>();
         currentSpeed = moveSpeed;
+        characterState = GetComponent<CharacterState>();
     }
 
     private void Update()
     {
+        UpdateLocomotionState();
+
         HandleMovement();
         HandleRotation();
         HandleGravity();
@@ -43,25 +49,8 @@ public class CharacterMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        Vector2 input = inputHandler.MoveInput;
-
-        Vector3 forward = cameraTransform.forward;
-        Vector3 right = cameraTransform.right;
-
-        forward.y = 0f;
-        right.y = 0f;
-
-        forward.Normalize();
-        right.Normalize();
-
         movementDirection =
-            forward * input.y +
-            right * input.x;
-
-        if (movementDirection.sqrMagnitude > 1f)
-        {
-            movementDirection.Normalize();
-        }
+            movementIntent.MovementDirection;
 
         float targetSpeed = CalculateFinalSpeed();
 
@@ -83,20 +72,13 @@ public class CharacterMovement : MonoBehaviour
 
     private void HandleRotation()
     {
-        if (movementDirection.sqrMagnitude < 0.001f)
-        {
-            return;
-        }
-
-        Vector3 facingDirection = cameraTransform.forward;
-        facingDirection.y = 0f;
+        Vector3 facingDirection =
+            movementIntent.FacingDirection;
 
         if (facingDirection.sqrMagnitude < 0.001f)
         {
             return;
         }
-
-        facingDirection.Normalize();
 
         Quaternion targetRotation =
             Quaternion.LookRotation(facingDirection);
@@ -107,6 +89,7 @@ public class CharacterMovement : MonoBehaviour
             rotationSpeed * Time.deltaTime
         );
     }
+
     private void HandleGravity()
     {
         if (characterController.isGrounded &&
@@ -115,30 +98,41 @@ public class CharacterMovement : MonoBehaviour
             verticalVelocity = -2f;
         }
 
-        verticalVelocity += gravity * Time.deltaTime;
-
         if (inputHandler.JumpPressed &&
-            characterController.isGrounded)
+            characterState.CurrentState == LocomotionState.Grounded)
         {
             verticalVelocity =
                 Mathf.Sqrt(
                     jumpHeight * -2f * gravity
                 );
         }
+
+        verticalVelocity += gravity * Time.deltaTime;
+    }
+
+    private void UpdateLocomotionState()
+    {
+        if (characterController.isGrounded)
+        {
+            characterState.SetState(
+                LocomotionState.Grounded
+            );
+
+            return;
+        }
+
+        characterState.SetState(
+            LocomotionState.Airborne
+        );
     }
 
     private float CalculateFinalSpeed()
     {
-        float targetSpeed = moveSpeed;
-
-        bool isMoving =
-            inputHandler.MoveInput.sqrMagnitude > 0.01f;
-
-        if (inputHandler.SprintHeld && isMoving)
+        if (movementIntent.Sprinting)
         {
-            targetSpeed = sprintSpeed;
+            return sprintSpeed;
         }
 
-        return targetSpeed;
+        return moveSpeed;
     }
 }
