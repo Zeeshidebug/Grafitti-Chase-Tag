@@ -136,6 +136,33 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""DebugMenu"",
+                    ""type"": ""Button"",
+                    ""id"": ""7ef65db5-5d0d-470c-a923-cb9d04d60dc4"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DebugNext"",
+                    ""type"": ""Button"",
+                    ""id"": ""5ebb48ea-1c18-4a90-a460-8a9070f48826"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DebugPrevious"",
+                    ""type"": ""Button"",
+                    ""id"": ""ead5deea-d33b-4869-90b0-a732e1cc9c3f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -237,6 +264,39 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""Look"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4fbe6796-cdec-4c22-9b14-6b4600a917c9"",
+                    ""path"": ""<Keyboard>/f1"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DebugMenu"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""7cf319cd-681b-4120-ab75-d34ec6c6f63c"",
+                    ""path"": ""<Keyboard>/period"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DebugNext"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2cafc134-a3b0-4cf2-bbdc-22bdacbe31e2"",
+                    ""path"": ""<Keyboard>/comma"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DebugPrevious"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -311,6 +371,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
         m_Player_Newaction = m_Player.FindAction("New action", throwIfNotFound: true);
         m_Player_Look = m_Player.FindAction("Look", throwIfNotFound: true);
+        m_Player_DebugMenu = m_Player.FindAction("DebugMenu", throwIfNotFound: true);
+        m_Player_DebugNext = m_Player.FindAction("DebugNext", throwIfNotFound: true);
+        m_Player_DebugPrevious = m_Player.FindAction("DebugPrevious", throwIfNotFound: true);
     }
 
     ~@InputSystem_Actions()
@@ -396,6 +459,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Sprint;
     private readonly InputAction m_Player_Newaction;
     private readonly InputAction m_Player_Look;
+    private readonly InputAction m_Player_DebugMenu;
+    private readonly InputAction m_Player_DebugNext;
+    private readonly InputAction m_Player_DebugPrevious;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -427,6 +493,18 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Look".
         /// </summary>
         public InputAction @Look => m_Wrapper.m_Player_Look;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DebugMenu".
+        /// </summary>
+        public InputAction @DebugMenu => m_Wrapper.m_Player_DebugMenu;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DebugNext".
+        /// </summary>
+        public InputAction @DebugNext => m_Wrapper.m_Player_DebugNext;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DebugPrevious".
+        /// </summary>
+        public InputAction @DebugPrevious => m_Wrapper.m_Player_DebugPrevious;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -468,6 +546,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Look.started += instance.OnLook;
             @Look.performed += instance.OnLook;
             @Look.canceled += instance.OnLook;
+            @DebugMenu.started += instance.OnDebugMenu;
+            @DebugMenu.performed += instance.OnDebugMenu;
+            @DebugMenu.canceled += instance.OnDebugMenu;
+            @DebugNext.started += instance.OnDebugNext;
+            @DebugNext.performed += instance.OnDebugNext;
+            @DebugNext.canceled += instance.OnDebugNext;
+            @DebugPrevious.started += instance.OnDebugPrevious;
+            @DebugPrevious.performed += instance.OnDebugPrevious;
+            @DebugPrevious.canceled += instance.OnDebugPrevious;
         }
 
         /// <summary>
@@ -494,6 +581,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Look.started -= instance.OnLook;
             @Look.performed -= instance.OnLook;
             @Look.canceled -= instance.OnLook;
+            @DebugMenu.started -= instance.OnDebugMenu;
+            @DebugMenu.performed -= instance.OnDebugMenu;
+            @DebugMenu.canceled -= instance.OnDebugMenu;
+            @DebugNext.started -= instance.OnDebugNext;
+            @DebugNext.performed -= instance.OnDebugNext;
+            @DebugNext.canceled -= instance.OnDebugNext;
+            @DebugPrevious.started -= instance.OnDebugPrevious;
+            @DebugPrevious.performed -= instance.OnDebugPrevious;
+            @DebugPrevious.canceled -= instance.OnDebugPrevious;
         }
 
         /// <summary>
@@ -634,5 +730,26 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnLook(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DebugMenu" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDebugMenu(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DebugNext" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDebugNext(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DebugPrevious" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDebugPrevious(InputAction.CallbackContext context);
     }
 }

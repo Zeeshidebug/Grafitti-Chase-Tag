@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerInputHandler))]
 public class DebugHUD : MonoBehaviour
 {
     [Header("References")]
@@ -8,18 +9,73 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private PlayerInputHandler inputHandler;
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private ParkourDetector parkourDetector;
-
-    [Header("Debug Settings")]
-    [SerializeField] private KeyCode toggleKey = KeyCode.F1;
+    [SerializeField] private ParkourCandidateEvaluator parkourEvaluator;
 
     private bool showDebug = true;
 
+    private enum DebugPage
+    {
+        Player,
+        Parkour
+    }
+
+    private DebugPage currentPage = DebugPage.Player;
+
+    private void Awake()
+    {
+        inputHandler = GetComponent<PlayerInputHandler>();
+    }
+
     private void Update()
     {
-        if (Input.GetKeyDown(toggleKey))
+        if (inputHandler.DebugLog)
         {
             showDebug = !showDebug;
         }
+
+        if (!showDebug)
+        {
+            return;
+        }
+
+        if (inputHandler.DebugNext)
+        {
+            NextPage();
+        }
+
+        if (inputHandler.DebugPrevious)
+        {
+            PreviousPage();
+        }
+    }
+
+    private void NextPage()
+    {
+        int next =
+            (int)currentPage + 1;
+
+        if (next >= System.Enum.GetValues(
+            typeof(DebugPage)).Length)
+        {
+            next = 0;
+        }
+
+        currentPage = (DebugPage)next;
+    }
+
+    private void PreviousPage()
+    {
+        int previous =
+            (int)currentPage - 1;
+
+        if (previous < 0)
+        {
+            previous =
+                System.Enum.GetValues(
+                    typeof(DebugPage)).Length - 1;
+        }
+
+        currentPage = (DebugPage)previous;
     }
 
     private void OnGUI()
@@ -30,27 +86,37 @@ public class DebugHUD : MonoBehaviour
         }
 
         GUILayout.BeginArea(
-            new Rect(20f, 20f, 350f, 500f)
+            new Rect(20f, 20f, 350f, 1000f)
         );
 
-        GUILayout.Label("PLAYER DEBUG");
-        GUILayout.Label("------------------------------");
+        GUILayout.Label(
+            $"DEBUG — {currentPage.ToString().ToUpper()}"
+        );
 
+        GUILayout.Label(
+            "------------------------------"
+        );
+
+        switch (currentPage)
+        {
+            case DebugPage.Player:
+                DrawPlayerPage();
+                break;
+
+            case DebugPage.Parkour:
+                DrawParkourPage();
+                break;
+        }
+
+        GUILayout.EndArea();
+    }
+
+    private void DrawPlayerPage()
+    {
         if (characterState != null)
         {
             GUILayout.Label(
                 $"State: {characterState.CurrentState}"
-            );
-        }
-
-        if (characterMovement != null)
-        {
-            GUILayout.Label(
-                $"Speed: {characterMovement.CurrentSpeed:F2}"
-            );
-
-            GUILayout.Label(
-                $"Vertical Velocity: {characterMovement.VerticalVelocity:F2}"
             );
         }
 
@@ -76,39 +142,118 @@ public class DebugHUD : MonoBehaviour
 
         GUILayout.Space(5f);
 
+        GUILayout.Label("MOVEMENT");
+        GUILayout.Label("------------------------------");
+
+        if (characterMovement != null)
+        {
+            GUILayout.Label(
+                $"Speed: {characterMovement.CurrentSpeed:F2}"
+            );
+
+            GUILayout.Label(
+                $"Vertical Velocity: " +
+                $"{characterMovement.VerticalVelocity:F2}"
+            );
+        }
+
+        GUILayout.Space(5f);
+
         GUILayout.Label("MOVEMENT INTENT");
         GUILayout.Label("------------------------------");
 
         if (movementIntent != null)
         {
             GUILayout.Label(
-                $"Direction: {movementIntent.MovementDirection}"
+                $"Direction: " +
+                $"{movementIntent.MovementDirection}"
             );
 
             GUILayout.Label(
-                $"Facing: {movementIntent.FacingDirection}"
+                $"Facing: " +
+                $"{movementIntent.FacingDirection}"
             );
 
             GUILayout.Label(
-                $"Sprinting: {movementIntent.Sprinting}"
+                $"Sprinting: " +
+                $"{movementIntent.Sprinting}"
             );
         }
+    }
 
-        GUILayout.Space(5f);
-
-        GUILayout.Label("PARKOUR DETECTION");
+    private void DrawParkourPage()
+    {
+        GUILayout.Label("DETECTION");
         GUILayout.Label("------------------------------");
 
         if (parkourDetector != null)
         {
             GUILayout.Label(
-                $"Obstacle Detected: {parkourDetector.ObstacleDetected}"
+                $"Obstacle: " +
+                $"{parkourDetector.ObstacleDetected}"
             );
 
-            GUILayout.Label(
-                $"Obstacle Height: {parkourDetector.ObstacleHeight:F2}"
-            );
+            if (parkourDetector.ObstacleDetected)
+            {
+                ParkourObstacleData obstacle =
+                    parkourDetector.CurrentObstacle;
+
+                GUILayout.Label(
+                    $"Distance: {obstacle.Distance:F2}"
+                );
+
+                GUILayout.Label(
+                    $"Height: {obstacle.Height:F2}"
+                );
+
+                GUILayout.Label(
+                    $"Normal: {obstacle.SurfaceNormal}"
+                );
+
+                GUILayout.Label(
+                    $"Top: {obstacle.TopPosition}"
+                );
+            }
         }
-        GUILayout.EndArea();
+
+        GUILayout.Space(5f);
+
+        GUILayout.Label("CANDIDATE");
+        GUILayout.Label("------------------------------");
+
+        if (parkourEvaluator != null)
+        {
+            ParkourCandidate candidate =
+                parkourEvaluator.CurrentCandidate;
+
+            if (candidate != null)
+            {
+                GUILayout.Label(
+                    $"Vault: {candidate.CanVault}"
+                );
+
+                GUILayout.Label(
+                    $"Vault Result: {candidate.VaultResult}"
+                );
+
+                GUILayout.Label(
+                    $"Clearance: {candidate.HasClearance}"
+                );
+
+                GUILayout.Label(
+                    $"Landing Space: {candidate.HasLandingSpace}"
+                );
+
+                GUILayout.Label(
+                    $"Climb: {candidate.CanClimb}"
+                );
+            }
+            else
+            {
+                GUILayout.Label(
+                    "No Candidate"
+                );
+            }
+        }
     }
 }
