@@ -163,6 +163,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Interaction"",
+                    ""type"": ""Button"",
+                    ""id"": ""d76ee910-77f9-42d2-b011-2ba24665568d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -297,6 +306,17 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""DebugPrevious"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""9b90ab94-c0af-4b58-95aa-12dd4f20d673"",
+                    ""path"": ""<Mouse>/leftButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Interaction"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -374,6 +394,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player_DebugMenu = m_Player.FindAction("DebugMenu", throwIfNotFound: true);
         m_Player_DebugNext = m_Player.FindAction("DebugNext", throwIfNotFound: true);
         m_Player_DebugPrevious = m_Player.FindAction("DebugPrevious", throwIfNotFound: true);
+        m_Player_Interaction = m_Player.FindAction("Interaction", throwIfNotFound: true);
     }
 
     ~@InputSystem_Actions()
@@ -462,6 +483,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_DebugMenu;
     private readonly InputAction m_Player_DebugNext;
     private readonly InputAction m_Player_DebugPrevious;
+    private readonly InputAction m_Player_Interaction;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -505,6 +527,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/DebugPrevious".
         /// </summary>
         public InputAction @DebugPrevious => m_Wrapper.m_Player_DebugPrevious;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Interaction".
+        /// </summary>
+        public InputAction @Interaction => m_Wrapper.m_Player_Interaction;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -555,6 +581,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @DebugPrevious.started += instance.OnDebugPrevious;
             @DebugPrevious.performed += instance.OnDebugPrevious;
             @DebugPrevious.canceled += instance.OnDebugPrevious;
+            @Interaction.started += instance.OnInteraction;
+            @Interaction.performed += instance.OnInteraction;
+            @Interaction.canceled += instance.OnInteraction;
         }
 
         /// <summary>
@@ -590,6 +619,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @DebugPrevious.started -= instance.OnDebugPrevious;
             @DebugPrevious.performed -= instance.OnDebugPrevious;
             @DebugPrevious.canceled -= instance.OnDebugPrevious;
+            @Interaction.started -= instance.OnInteraction;
+            @Interaction.performed -= instance.OnInteraction;
+            @Interaction.canceled -= instance.OnInteraction;
         }
 
         /// <summary>
@@ -751,5 +783,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnDebugPrevious(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Interaction" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnInteraction(InputAction.CallbackContext context);
     }
 }

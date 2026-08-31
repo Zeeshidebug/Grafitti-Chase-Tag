@@ -10,12 +10,14 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private ParkourDetector parkourDetector;
     [SerializeField] private ParkourCandidateEvaluator parkourEvaluator;
+    [SerializeField] private VaultExecutor vaultExecutor;
 
     private bool showDebug = true;
 
     private enum DebugPage
     {
         Player,
+        Obstacle,
         Parkour
     }
 
@@ -103,6 +105,10 @@ public class DebugHUD : MonoBehaviour
                 DrawPlayerPage();
                 break;
 
+            case DebugPage.Obstacle:
+                DrawObstaclePage();
+                break;
+
             case DebugPage.Parkour:
                 DrawParkourPage();
                 break;
@@ -138,6 +144,10 @@ public class DebugHUD : MonoBehaviour
             GUILayout.Label(
                 $"Jump: {inputHandler.JumpPressed}"
             );
+
+            GUILayout.Label(
+            $"Interaction: {inputHandler.Interaction}"
+            );
         }
 
         GUILayout.Space(5f);
@@ -154,6 +164,10 @@ public class DebugHUD : MonoBehaviour
             GUILayout.Label(
                 $"Vertical Velocity: " +
                 $"{characterMovement.VerticalVelocity:F2}"
+            );
+
+            GUILayout.Label(
+            $"Vaulting: {vaultExecutor.IsExecuting}"
             );
         }
 
@@ -181,7 +195,7 @@ public class DebugHUD : MonoBehaviour
         }
     }
 
-    private void DrawParkourPage()
+    private void DrawObstaclePage()
     {
         GUILayout.Label("DETECTION");
         GUILayout.Label("------------------------------");
@@ -223,17 +237,17 @@ public class DebugHUD : MonoBehaviour
 
         if (parkourEvaluator != null)
         {
-            ParkourCandidate candidate =
-                parkourEvaluator.CurrentCandidate;
+            VaultCandidate candidate =
+                parkourEvaluator.CurrentVaultCandidate;
 
             if (candidate != null)
             {
                 GUILayout.Label(
-                    $"Vault: {candidate.CanVault}"
+                    $"Vault: {candidate.IsValid}"
                 );
 
                 GUILayout.Label(
-                    $"Vault Result: {candidate.VaultResult}"
+                    $"Vault Result: {candidate.Result}"
                 );
 
                 GUILayout.Label(
@@ -242,10 +256,6 @@ public class DebugHUD : MonoBehaviour
 
                 GUILayout.Label(
                     $"Landing Space: {candidate.HasLandingSpace}"
-                );
-
-                GUILayout.Label(
-                    $"Climb: {candidate.CanClimb}"
                 );
             }
             else
@@ -256,4 +266,30 @@ public class DebugHUD : MonoBehaviour
             }
         }
     }
+
+    private void DrawParkourPage()
+    {
+        GUILayout.Label("NOTHING TO DEBUG HERE YET");
+        // GUILayout.Label("CHARACTER");
+        // GUILayout.Label("------------------------------");
+
+        //         GUILayout.Label(
+        //             $"State: {characterState.CurrentState}"
+        //         );
+
+        // GUILayout.Space(5f);
+        // GUILayout.Label("INPUT");
+        // GUILayout.Label("------------------------------");
+        //         GUILayout.Label(
+        //             $"Interaction: {inputHandler.Interaction}"
+        //         );
+
+        // GUILayout.Space(5f);
+        // GUILayout.Label("ACTION");
+        // GUILayout.Label("------------------------------");
+        //         GUILayout.Label(
+        //             $"Vaulting: {parkourEvaluator.IsVaulting}"
+        //         );
+    }
+
 }

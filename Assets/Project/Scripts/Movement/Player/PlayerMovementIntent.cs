@@ -9,6 +9,7 @@ public class PlayerMovementIntent : MonoBehaviour
     public Vector3 MovementDirection { get; private set; }
     public Vector3 FacingDirection { get; private set; }
     public bool Sprinting { get; private set; }
+    public bool Interaction { get; private set; }
 
     private PlayerInputHandler inputHandler;
 
@@ -29,6 +30,7 @@ public class PlayerMovementIntent : MonoBehaviour
     inputHandler.MoveInput.sqrMagnitude > 0.01f;
 
         Vector2 input = inputHandler.MoveInput;
+        Interaction = inputHandler.Interaction;
 
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
