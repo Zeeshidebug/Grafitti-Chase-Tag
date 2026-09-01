@@ -15,4 +15,6 @@ public class VaultCandidate
     public Vector3 LandingNormal { get; set; }
 
     public float ObstacleHeight { get; set; }
+
+    public float RequiredArcHeight { get; set; }
 }

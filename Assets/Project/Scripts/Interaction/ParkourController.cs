@@ -12,7 +12,6 @@ public class ParkourController : MonoBehaviour
     {
         TryParkour();
     }
-
     private void TryParkour()
     {
         // Player tidak meminta interaction.

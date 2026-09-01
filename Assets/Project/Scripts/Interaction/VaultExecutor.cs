@@ -5,7 +5,6 @@ public class VaultExecutor : MonoBehaviour
 {
     [Header("Vault")]
     [SerializeField] private float vaultDuration = 0.6f;
-    [SerializeField] private float vaultHeight = 1.2f;
 
     private CharacterController characterController;
 
@@ -18,7 +17,7 @@ public class VaultExecutor : MonoBehaviour
     private bool isExecuting;
 
     private float elapsedTime;
-
+    private float currentArcHeight;
     private Vector3 startPosition;
     private Vector3 landingPosition;
 
@@ -38,6 +37,7 @@ public class VaultExecutor : MonoBehaviour
 
     public bool TryExecute(VaultCandidate candidate)
     {
+
         if (candidate == null)
             return false;
 
@@ -57,13 +57,19 @@ public class VaultExecutor : MonoBehaviour
 
         elapsedTime = 0f;
 
+        currentArcHeight =
+    candidate.RequiredArcHeight;
+
+        Debug.Log(
+        $"VAULT SNAPSHOT: " +
+        $"Arc={candidate.RequiredArcHeight:F2}"
+    );
+
         isExecuting = true;
 
         characterMovement.SetState(
             LocomotionState.Vaulting
         );
-
-
 
         return true;
     }
@@ -75,6 +81,7 @@ public class VaultExecutor : MonoBehaviour
 
         ExecuteVault();
     }
+
 
     private void ExecuteVault()
     {
@@ -94,7 +101,7 @@ public class VaultExecutor : MonoBehaviour
 
         float arc =
             Mathf.Sin(t * Mathf.PI)
-            * vaultHeight;
+            * currentArcHeight;
 
         position +=
             Vector3.up * arc;
@@ -102,9 +109,7 @@ public class VaultExecutor : MonoBehaviour
         Vector3 movement =
             position - transform.position;
 
-        characterController.Move(
-            movement
-        );
+        characterController.Move(movement);
 
         if (t >= 1f)
         {

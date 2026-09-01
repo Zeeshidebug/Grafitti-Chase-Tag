@@ -3,23 +3,57 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class VaultEvaluator : MonoBehaviour
 {
-    [Header("Vault")]
-    [SerializeField] private float maxVaultHeight = 1.5f;
+    [Header("Vault Height")]
+    [SerializeField]
+    [Range(0.05f, 1f)]
+    private float minVaultHeightRatio = 0.45f;
 
-    [SerializeField] private float clearanceMargin = 0.05f;
+    [SerializeField]
+    [Range(0.1f, 1f)]
+    private float maxVaultHeightRatio = 0.85f;
 
-    [SerializeField] private float landingDistance = 1.5f;
+    [Header("Clearance")]
+    [SerializeField]
+    [Range(0f, 1f)]
+    private float clearanceMarginRatio = 0.1f;
+    [SerializeField]
+    private float vaultClearance = 0.1f;
 
-    [SerializeField] private float maxLandingDrop = 2f;
+    [Header("Landing")]
+    [SerializeField]
+    [Range(0.1f, 2f)]
+    private float landingDistanceRatio = 0.75f;
 
-    [SerializeField] private float maxLandingSlope = 45f;
+    [SerializeField]
+    private float maxLandingDrop = 2f;
+
+    [SerializeField]
+    private float maxLandingSlope = 45f;
 
     [Header("Environment")]
     [SerializeField] private LayerMask walkableSurfaceLayer;
     [SerializeField] private LayerMask environmentCollisionLayer;
     [SerializeField] private LayerMask parkourLayer;
 
+    private float minVaultHeight =>
+    characterController.height *
+    minVaultHeightRatio;
+
+    private float maxVaultHeight =>
+        characterController.height *
+        maxVaultHeightRatio;
+
+    private float clearanceMargin =>
+        characterController.radius *
+        clearanceMarginRatio;
+
+    private float landingDistance =>
+        characterController.height *
+        landingDistanceRatio;
+
     private CharacterController characterController;
+
+    private VaultExecutor vaultExecutor;
 
     private void Awake()
     {
@@ -43,7 +77,7 @@ public class VaultEvaluator : MonoBehaviour
             obstacle.Height;
 
         // Height
-        if (obstacle.Height <= 0f)
+        if (obstacle.Height < minVaultHeight)
         {
             candidate.Result =
                 ParkourValidationResult.TooLow;
@@ -93,6 +127,15 @@ public class VaultEvaluator : MonoBehaviour
 
         candidate.LandingNormal =
             landingNormal;
+
+        Vector3 startPosition = transform.position;
+
+        candidate.RequiredArcHeight =
+            CalculateRequiredArcHeight(
+                obstacle,
+                candidate.LandingPosition,
+                startPosition
+            );
 
         // Valid
         candidate.IsValid = true;
@@ -215,5 +258,96 @@ ParkourObstacleData obstacle
             center -
             Vector3.up *
             (cylinderHeight * 0.5f);
+    }
+
+    private float GetCharacterBottomOffset()
+    {
+        float halfHeight = characterController.height * 0.5f;
+
+        return characterController.center.y - halfHeight;
+    }
+
+    public float GetRequiredCenterHeight(
+        ParkourObstacleData obstacle)
+    {
+        float bottomOffset =
+            GetCharacterBottomOffset();
+
+        float requiredBottomHeight =
+            obstacle.TopPosition.y +
+            vaultClearance;
+
+        return requiredBottomHeight -
+            bottomOffset;
+    }
+
+    private float CalculateRequiredArcHeight(
+        ParkourObstacleData obstacle,
+        Vector3 landingPosition,
+        Vector3 startPosition)
+    {
+        float requiredCenterHeight =
+            GetRequiredCenterHeight(obstacle);
+
+        Vector3 horizontalDelta =
+            landingPosition - startPosition;
+
+        horizontalDelta.y = 0f;
+
+        float horizontalLength =
+            horizontalDelta.magnitude;
+
+        if (horizontalLength <= 0.001f)
+        {
+            return 0f;
+        }
+
+        Vector3 obstacleOffset =
+            obstacle.TopPosition - startPosition;
+
+        obstacleOffset.y = 0f;
+
+        float obstacleDistance =
+            Vector3.Dot(
+                obstacleOffset,
+                horizontalDelta.normalized
+            );
+
+        float t =
+            Mathf.Clamp01(
+                obstacleDistance / horizontalLength
+            );
+
+        float baseHeight =
+            Mathf.Lerp(
+                startPosition.y,
+                landingPosition.y,
+                t
+            );
+
+        float sinValue =
+            Mathf.Sin(t * Mathf.PI);
+
+        if (sinValue <= 0.001f)
+        {
+            return 0f;
+        }
+
+        float requiredArc =
+            (requiredCenterHeight - baseHeight)
+            / sinValue;
+
+        //         Debug.Log(
+        // $"Vault Geometry | " +
+        // $"ObstacleTopY: {obstacle.TopPosition.y:F2} | " +
+        // $"RequiredBottomY: {requiredBottomHeight:F2} | " +
+        // $"RequiredCenterY: {requiredCenterHeight:F2} | " +
+        // $"BaseY: {baseHeight:F2} | " +
+        // $"t: {t:F2} | " +
+        // $"sin: {sinValue:F2} | " +
+        // $"RequiredArc: {requiredArc:F2}"
+        // );
+
+        return Mathf.Max(0f, requiredArc);
     }
 }
