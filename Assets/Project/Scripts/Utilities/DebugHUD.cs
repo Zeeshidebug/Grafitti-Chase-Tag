@@ -11,6 +11,7 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private ParkourDetector parkourDetector;
     [SerializeField] private ParkourCandidateEvaluator parkourEvaluator;
     [SerializeField] private VaultExecutor vaultExecutor;
+    [SerializeField] private StaminaSystem staminaSystem;
 
     private bool showDebug = true;
 
@@ -167,7 +168,11 @@ public class DebugHUD : MonoBehaviour
             );
 
             GUILayout.Label(
-            $"Vaulting: {vaultExecutor.IsExecuting}"
+            $"Stamina: {staminaSystem.CurrentStamina:F2}"
+            );
+
+            GUILayout.Label(
+            $"Is Exhausted: {staminaSystem.IsExhausted}"
             );
         }
 

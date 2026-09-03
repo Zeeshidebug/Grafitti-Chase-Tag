@@ -6,6 +6,9 @@ public class VaultExecutor : MonoBehaviour
     [Header("Vault")]
     [SerializeField] private float vaultDuration = 0.6f;
 
+    [Header("Stamina")]
+    [SerializeField] private float staminaCostRate = 0.3f;
+
     private CharacterController characterController;
 
     private CharacterState characterMovement;
@@ -13,6 +16,8 @@ public class VaultExecutor : MonoBehaviour
     private VaultCandidate activeCandidate;
 
     private PlayerInputHandler inputHandler;
+
+    private StaminaSystem staminaSystem;
 
     private bool isExecuting;
 
@@ -31,6 +36,9 @@ public class VaultExecutor : MonoBehaviour
 
         inputHandler =
             GetComponent<PlayerInputHandler>();
+
+        staminaSystem =
+            GetComponent<StaminaSystem>();
     }
 
     public bool IsExecuting => isExecuting;
@@ -47,6 +55,13 @@ public class VaultExecutor : MonoBehaviour
         if (isExecuting)
             return false;
 
+        float staminaCost =
+        staminaSystem.MaxStamina * staminaCostRate;
+
+        if (!staminaSystem.TryConsume(staminaCost))
+            return false;
+
+
         activeCandidate = candidate;
 
         startPosition =
@@ -59,11 +74,6 @@ public class VaultExecutor : MonoBehaviour
 
         currentArcHeight =
     candidate.RequiredArcHeight;
-
-        Debug.Log(
-        $"VAULT SNAPSHOT: " +
-        $"Arc={candidate.RequiredArcHeight:F2}"
-    );
 
         isExecuting = true;
 

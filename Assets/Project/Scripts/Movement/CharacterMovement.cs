@@ -11,6 +11,8 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float speedChangeRate = 8f;
     [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float sprintStaminaCostRate = 0.05f;
+    [SerializeField] private float jumpStaminaCostRate = 0.25f;
 
     [Header("Gravity")]
     [SerializeField] private float gravity = -9.81f;
@@ -22,6 +24,7 @@ public class CharacterMovement : MonoBehaviour
     private PlayerMovementIntent movementIntent;
     private PlayerInputHandler inputHandler;
     private CharacterState characterState;
+    private StaminaSystem staminaSystem;
 
     private float currentSpeed;
     private float verticalVelocity;
@@ -36,6 +39,7 @@ public class CharacterMovement : MonoBehaviour
         inputHandler = GetComponent<PlayerInputHandler>();
         currentSpeed = moveSpeed;
         characterState = GetComponent<CharacterState>();
+        staminaSystem = GetComponent<StaminaSystem>();
     }
 
     private void Update()
@@ -45,6 +49,8 @@ public class CharacterMovement : MonoBehaviour
         HandleMovement();
         HandleRotation();
         HandleGravity();
+        HandleStaminaRegeneration();
+        HandleSprintStamina();
     }
 
     private void HandleMovement()
@@ -101,6 +107,12 @@ public class CharacterMovement : MonoBehaviour
         if (inputHandler.JumpPressed &&
             characterState.CurrentState == LocomotionState.Grounded)
         {
+            float staminaCost =
+                staminaSystem.MaxStamina * jumpStaminaCostRate;
+
+            if (!staminaSystem.TryConsume(staminaCost))
+                return;
+
             verticalVelocity =
                 Mathf.Sqrt(
                     jumpHeight * -2f * gravity
@@ -112,6 +124,9 @@ public class CharacterMovement : MonoBehaviour
 
     private void UpdateLocomotionState()
     {
+        if (characterState.CurrentState == LocomotionState.Vaulting)
+            return;
+
         if (characterController.isGrounded)
         {
             characterState.SetState(
@@ -125,14 +140,43 @@ public class CharacterMovement : MonoBehaviour
             LocomotionState.Airborne
         );
     }
-
     private float CalculateFinalSpeed()
     {
+        if (staminaSystem.IsExhausted)
+            return moveSpeed * 0.6f;
+
         if (movementIntent.Sprinting)
-        {
             return sprintSpeed;
-        }
 
         return moveSpeed;
+    }
+    private void HandleStaminaRegeneration()
+    {
+        if (movementIntent.Sprinting)
+            return;
+
+        if (characterState.CurrentState != LocomotionState.Grounded)
+            return;
+
+        staminaSystem.Regenerate(Time.deltaTime);
+    }
+
+    private void HandleSprintStamina()
+    {
+        if (!movementIntent.Sprinting)
+            return;
+
+        if (staminaSystem.IsExhausted)
+            return;
+
+        if (characterState.CurrentState != LocomotionState.Grounded)
+            return;
+
+        float staminaCost =
+            staminaSystem.MaxStamina
+            * sprintStaminaCostRate
+            * Time.deltaTime;
+
+        staminaSystem.ConsumeContinuous(staminaCost);
     }
 }

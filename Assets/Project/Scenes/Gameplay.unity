@@ -2529,6 +2529,7 @@ GameObject:
   - component: {fileID: 922158813}
   - component: {fileID: 922158815}
   - component: {fileID: 922158814}
+  - component: {fileID: 922158816}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2651,6 +2652,8 @@ MonoBehaviour:
   sprintSpeed: 8
   speedChangeRate: 8
   rotationSpeed: 10
+  sprintStaminaCostRate: 0.05
+  jumpStaminaCostRate: 0.25
   gravity: -9.81
   jumpHeight: 2
 --- !u!114 &922158807
@@ -2807,6 +2810,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VaultExecutor
   vaultDuration: 0.6
+  staminaCostRate: 0.3
+--- !u!114 &922158816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb3d4f7fead77ce4fadb75484f2ffbef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StaminaSystem
+  maxStamina: 100
+  regenerationRate: 0.1
 --- !u!1 &933264935
 GameObject:
   m_ObjectHideFlags: 0
@@ -4708,6 +4726,7 @@ MonoBehaviour:
   parkourDetector: {fileID: 922158811}
   parkourEvaluator: {fileID: 922158812}
   vaultExecutor: {fileID: 922158815}
+  staminaSystem: {fileID: 922158816}
 --- !u!114 &1786466197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5510,6 +5529,7 @@ SceneRoots:
   m_Roots:
   - {fileID: 410087041}
   - {fileID: 832575519}
+  - {fileID: 1675965760}
   - {fileID: 922158804}
   - {fileID: 1370466444}
   - {fileID: 370847139}
@@ -5548,5 +5568,4 @@ SceneRoots:
   - {fileID: 2043021422}
   - {fileID: 664474279}
   - {fileID: 1931132372}
-  - {fileID: 1675965760}
   - {fileID: 511071234}
