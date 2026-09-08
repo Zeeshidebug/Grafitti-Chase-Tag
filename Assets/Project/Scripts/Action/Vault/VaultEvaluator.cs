@@ -53,8 +53,6 @@ public class VaultEvaluator : MonoBehaviour
 
     private CharacterController characterController;
 
-    private VaultExecutor vaultExecutor;
-
     private void Awake()
     {
         characterController =
@@ -80,7 +78,7 @@ public class VaultEvaluator : MonoBehaviour
         if (obstacle.Height < minVaultHeight)
         {
             candidate.Result =
-                ParkourValidationResult.TooLow;
+                VaultValidationResult.TooLow;
 
             return candidate;
         }
@@ -88,7 +86,7 @@ public class VaultEvaluator : MonoBehaviour
         if (obstacle.Height > maxVaultHeight)
         {
             candidate.Result =
-                ParkourValidationResult.TooHigh;
+                VaultValidationResult.TooHigh;
 
             return candidate;
         }
@@ -99,7 +97,7 @@ public class VaultEvaluator : MonoBehaviour
             candidate.HasClearance = false;
 
             candidate.Result =
-                ParkourValidationResult.NoClearance;
+                VaultValidationResult.NoClearance;
 
             return candidate;
         }
@@ -115,7 +113,7 @@ public class VaultEvaluator : MonoBehaviour
             candidate.HasLandingSpace = false;
 
             candidate.Result =
-                ParkourValidationResult.NoLandingSpace;
+                VaultValidationResult.NoLandingSpace;
 
             return candidate;
         }
@@ -141,7 +139,7 @@ public class VaultEvaluator : MonoBehaviour
         candidate.IsValid = true;
 
         candidate.Result =
-            ParkourValidationResult.Valid;
+            VaultValidationResult.Valid;
 
         return candidate;
     }

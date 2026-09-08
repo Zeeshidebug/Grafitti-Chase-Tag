@@ -25,6 +25,7 @@ public class CharacterMovement : MonoBehaviour
     private PlayerInputHandler inputHandler;
     private CharacterState characterState;
     private StaminaSystem staminaSystem;
+    private SlideExecutor slideExecutor;
 
     private float currentSpeed;
     private float verticalVelocity;
@@ -40,6 +41,7 @@ public class CharacterMovement : MonoBehaviour
         currentSpeed = moveSpeed;
         characterState = GetComponent<CharacterState>();
         staminaSystem = GetComponent<StaminaSystem>();
+        slideExecutor = GetComponent<SlideExecutor>();
     }
 
     private void Update()
@@ -55,8 +57,16 @@ public class CharacterMovement : MonoBehaviour
 
     private void HandleMovement()
     {
-        movementDirection =
-            movementIntent.MovementDirection;
+        Vector3 direction;
+
+        if (slideExecutor.IsExecuting)
+        {
+            direction = slideExecutor.CurrentSlideDirection;
+        }
+        else
+        {
+            direction = movementIntent.MovementDirection;
+        }
 
         float targetSpeed = CalculateFinalSpeed();
 
@@ -67,7 +77,7 @@ public class CharacterMovement : MonoBehaviour
         );
 
         Vector3 velocity =
-            movementDirection * currentSpeed;
+            direction * currentSpeed;
 
         velocity.y = verticalVelocity;
 
@@ -124,8 +134,11 @@ public class CharacterMovement : MonoBehaviour
 
     private void UpdateLocomotionState()
     {
-        if (characterState.CurrentState == LocomotionState.Vaulting)
+        if (characterState.CurrentState == LocomotionState.Vaulting ||
+            characterState.CurrentState == LocomotionState.Sliding)
+        {
             return;
+        }
 
         if (characterController.isGrounded)
         {
@@ -142,14 +155,21 @@ public class CharacterMovement : MonoBehaviour
     }
     private float CalculateFinalSpeed()
     {
+        float baseSpeed;
+
         if (staminaSystem.IsExhausted)
-            return moveSpeed * 0.6f;
+            baseSpeed = moveSpeed * 0.6f;
+        else if (movementIntent.Sprinting)
+            baseSpeed = sprintSpeed;
+        else
+            baseSpeed = moveSpeed;
 
-        if (movementIntent.Sprinting)
-            return sprintSpeed;
+        if (slideExecutor.IsExecuting)
+            return baseSpeed * slideExecutor.SlideSpeedMultiplier;
 
-        return moveSpeed;
+        return baseSpeed;
     }
+
     private void HandleStaminaRegeneration()
     {
         if (movementIntent.Sprinting)

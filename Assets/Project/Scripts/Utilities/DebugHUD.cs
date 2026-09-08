@@ -9,9 +9,12 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private PlayerInputHandler inputHandler;
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private ParkourDetector parkourDetector;
-    [SerializeField] private ParkourCandidateEvaluator parkourEvaluator;
     [SerializeField] private VaultExecutor vaultExecutor;
+    [SerializeField] private VaultEvaluator vaultEvaluator;
+    [SerializeField] private ClimbExecutor climbExecutor;
+    [SerializeField] private ClimbEvaluator climbEvaluator;
     [SerializeField] private StaminaSystem staminaSystem;
+    [SerializeField] private SlideExecutor slideExecutor;
 
     private bool showDebug = true;
 
@@ -240,10 +243,12 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label("CANDIDATE");
         GUILayout.Label("------------------------------");
 
-        if (parkourEvaluator != null)
+        if (vaultEvaluator != null)
         {
             VaultCandidate candidate =
-                parkourEvaluator.CurrentVaultCandidate;
+                vaultEvaluator.Evaluate(
+                    parkourDetector.CurrentObstacle
+                );
 
             if (candidate != null)
             {
@@ -274,27 +279,55 @@ public class DebugHUD : MonoBehaviour
 
     private void DrawParkourPage()
     {
-        GUILayout.Label("NOTHING TO DEBUG HERE YET");
-        // GUILayout.Label("CHARACTER");
-        // GUILayout.Label("------------------------------");
+        GUILayout.Label("ACTION - SLIDING");
+        GUILayout.Label("------------------------------");
 
-        //         GUILayout.Label(
-        //             $"State: {characterState.CurrentState}"
-        //         );
+        if (slideExecutor != null)
+        {
+            GUILayout.Label(
+                $"SLIDING: {slideExecutor.IsExecuting}"
+            );
 
-        // GUILayout.Space(5f);
-        // GUILayout.Label("INPUT");
-        // GUILayout.Label("------------------------------");
-        //         GUILayout.Label(
-        //             $"Interaction: {inputHandler.Interaction}"
-        //         );
+            if (slideExecutor.IsExecuting)
+            {
+                GUILayout.Label(
+                    $"Progress: {slideExecutor.Progress:F2}"
+                );
 
-        // GUILayout.Space(5f);
-        // GUILayout.Label("ACTION");
-        // GUILayout.Label("------------------------------");
-        //         GUILayout.Label(
-        //             $"Vaulting: {parkourEvaluator.IsVaulting}"
-        //         );
+                GUILayout.Label(
+                    $"Speed Multiplier: {slideExecutor.GetCurrentSpeedMultiplier():F2}"
+                );
+            }
+        }
+
+        GUILayout.Space(5f);
+        GUILayout.Label("ACTION - CLIMBING");
+        GUILayout.Label("------------------------------");
+
+        if (climbEvaluator != null)
+        {
+            ClimbCandidate candidate =
+                climbEvaluator.Evaluate(
+                    parkourDetector.CurrentObstacle
+                );
+
+            if (candidate != null)
+            {
+                GUILayout.Label(
+                    $"Climb: {candidate.IsValid}"
+                );
+
+                GUILayout.Label(
+                    $"Climb Result: {candidate.Result}"
+                );
+            }
+            else
+            {
+                GUILayout.Label(
+                    "No Candidate"
+                );
+            }
+        }
+
     }
-
 }

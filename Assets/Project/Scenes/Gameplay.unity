@@ -1990,7 +1990,7 @@ GameObject:
   - component: {fileID: 664474278}
   - component: {fileID: 664474277}
   - component: {fileID: 664474276}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Cube (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2084,7 +2084,7 @@ Transform:
   m_GameObject: {fileID: 664474275}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.81, y: 1.94, z: -31.68}
+  m_LocalPosition: {x: 10.81, y: 3.94, z: -31.68}
   m_LocalScale: {x: 4.16, y: 4.16, z: 4.16}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -2525,11 +2525,15 @@ GameObject:
   - component: {fileID: 922158806}
   - component: {fileID: 922158809}
   - component: {fileID: 922158811}
-  - component: {fileID: 922158812}
   - component: {fileID: 922158813}
   - component: {fileID: 922158815}
   - component: {fileID: 922158814}
   - component: {fileID: 922158816}
+  - component: {fileID: 922158818}
+  - component: {fileID: 922158817}
+  - component: {fileID: 922158820}
+  - component: {fileID: 922158819}
+  - component: {fileID: 922158821}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2735,24 +2739,6 @@ MonoBehaviour:
   parkourLayer:
     serializedVersion: 2
     m_Bits: 64
---- !u!114 &922158812
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 922158800}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86f6492de92603347a6dc0167f9ba241, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ParkourCandidateEvaluator
-  detector: {fileID: 922158811}
-  characterController: {fileID: 922158808}
-  parkourLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  vaultEvaluator: {fileID: 922158813}
 --- !u!114 &922158813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2795,8 +2781,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ParkourController
   movementIntent: {fileID: 922158810}
   characterState: {fileID: 922158809}
-  candidateEvaluator: {fileID: 922158812}
   vaultExecutor: {fileID: 922158815}
+  vaultEvaluator: {fileID: 922158813}
+  parkourDetector: {fileID: 922158811}
 --- !u!114 &922158815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2825,6 +2812,87 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::StaminaSystem
   maxStamina: 100
   regenerationRate: 0.1
+--- !u!114 &922158817
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b1d867e1fbd78f4494ae7766583c84e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlideController
+  movementIntent: {fileID: 922158810}
+  characterState: {fileID: 922158809}
+  slideExecutor: {fileID: 922158818}
+--- !u!114 &922158818
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9451b622d61c9a64f8f07c4bcc7ed072, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SlideExecutor
+  characterState: {fileID: 922158809}
+  slideHeightRatio: 0.5
+  slideDuration: 0.5
+  slideSpeedMultiplier: 1.8
+  staminaCostMultiplier: 0.3
+  standingClearanceLayer:
+    serializedVersion: 2
+    m_Bits: 64
+--- !u!114 &922158819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da4601bf648ee554091aed960c4d25f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClimbController
+  movementIntent: {fileID: 922158810}
+  characterState: {fileID: 922158809}
+  climbExecutor: {fileID: 922158820}
+  parkourDetector: {fileID: 922158811}
+  climbEvaluator: {fileID: 922158821}
+--- !u!114 &922158820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd2c88c8150853d4b8af6625428d37f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClimbExecutor
+  characterController: {fileID: 922158808}
+  characterState: {fileID: 922158809}
+  staminaSystem: {fileID: 922158816}
+  climbDuration: 0.4
+  staminaCostMultiplier: 0.3
+--- !u!114 &922158821
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cbfb90cf2a25ba4ea86d069f65dc7cc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClimbEvaluator
 --- !u!1 &933264935
 GameObject:
   m_ObjectHideFlags: 0
@@ -4724,9 +4792,12 @@ MonoBehaviour:
   inputHandler: {fileID: 922158807}
   movementIntent: {fileID: 922158810}
   parkourDetector: {fileID: 922158811}
-  parkourEvaluator: {fileID: 922158812}
   vaultExecutor: {fileID: 922158815}
+  vaultEvaluator: {fileID: 0}
+  climbExecutor: {fileID: 0}
+  climbEvaluator: {fileID: 0}
   staminaSystem: {fileID: 922158816}
+  slideExecutor: {fileID: 922158818}
 --- !u!114 &1786466197
 MonoBehaviour:
   m_ObjectHideFlags: 0

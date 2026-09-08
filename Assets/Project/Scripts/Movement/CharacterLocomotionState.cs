@@ -2,5 +2,7 @@ public enum LocomotionState
 {
     Grounded,
     Airborne,
-    Vaulting
+    Vaulting,
+    Sliding,
+    Climbing,
 }

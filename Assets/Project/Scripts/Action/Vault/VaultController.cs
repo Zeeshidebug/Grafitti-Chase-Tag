@@ -1,45 +1,36 @@
 using UnityEngine;
 
-public class ParkourController : MonoBehaviour
+public class VaultController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private CharacterState characterState;
-    [SerializeField] private ParkourCandidateEvaluator candidateEvaluator;
     [SerializeField] private VaultExecutor vaultExecutor;
+    [SerializeField] private VaultEvaluator vaultEvaluator;
+    [SerializeField] private ParkourDetector parkourDetector;
 
     private void Update()
     {
-        TryParkour();
+        TryVault();
     }
-    private void TryParkour()
+    private void TryVault()
     {
-        // Player tidak meminta interaction.
         if (!movementIntent.Interaction)
-        {
             return;
-        }
 
-        // Vault hanya boleh dilakukan saat sprinting.
         if (!movementIntent.Sprinting)
-        {
             return;
-        }
 
-        // Jangan mulai parkour ketika sedang dalam aksi lain.
         if (characterState.CurrentState != LocomotionState.Grounded)
-        {
             return;
-        }
 
         VaultCandidate candidate =
-            candidateEvaluator.CurrentVaultCandidate;
+            vaultEvaluator.Evaluate(
+                parkourDetector.CurrentObstacle
+            );
 
-        // Tidak ada Vault candidate yang valid.
         if (candidate == null || !candidate.IsValid)
-        {
             return;
-        }
 
         vaultExecutor.TryExecute(candidate);
     }
