@@ -20,18 +20,24 @@ public class CharacterMovement : MonoBehaviour
     [Header("Jump")]
     [SerializeField] private float jumpHeight = 2f;
 
+    [Header("Release Momentum")]
+    [SerializeField] private float releaseMomentumDecay = 5f;
+
     private CharacterController characterController;
     private PlayerMovementIntent movementIntent;
     private PlayerInputHandler inputHandler;
     private CharacterState characterState;
     private StaminaSystem staminaSystem;
     private SlideExecutor slideExecutor;
+    private PoleSpinExecutor poleSpinExecutor;
 
     private float currentSpeed;
     private float verticalVelocity;
 
     public float CurrentSpeed => currentSpeed;
     public float VerticalVelocity => verticalVelocity; private Vector3 movementDirection;
+
+    private Vector3 releaseMomentum;
 
     private void Awake()
     {
@@ -42,6 +48,7 @@ public class CharacterMovement : MonoBehaviour
         characterState = GetComponent<CharacterState>();
         staminaSystem = GetComponent<StaminaSystem>();
         slideExecutor = GetComponent<SlideExecutor>();
+        poleSpinExecutor = GetComponent<PoleSpinExecutor>();
     }
 
     private void Update()
@@ -63,6 +70,11 @@ public class CharacterMovement : MonoBehaviour
         {
             direction = slideExecutor.CurrentSlideDirection;
         }
+        else if (poleSpinExecutor.IsExecuting)
+        {
+            direction =
+                poleSpinExecutor.CurrentSpinDirection;
+        }
         else
         {
             direction = movementIntent.MovementDirection;
@@ -79,7 +91,16 @@ public class CharacterMovement : MonoBehaviour
         Vector3 velocity =
             direction * currentSpeed;
 
+        velocity += releaseMomentum;
+
         velocity.y = verticalVelocity;
+
+        releaseMomentum =
+    Vector3.MoveTowards(
+        releaseMomentum,
+        Vector3.zero,
+        releaseMomentumDecay * Time.deltaTime
+    );
 
         characterController.Move(
             velocity * Time.deltaTime
@@ -88,16 +109,25 @@ public class CharacterMovement : MonoBehaviour
 
     private void HandleRotation()
     {
-        Vector3 facingDirection =
-            movementIntent.FacingDirection;
+        Vector3 direction;
 
-        if (facingDirection.sqrMagnitude < 0.001f)
+        if (poleSpinExecutor.IsExecuting)
+        {
+            direction =
+                poleSpinExecutor.CurrentSpinDirection;
+        }
+        else
+        {
+            direction =
+                movementIntent.FacingDirection;
+        }
+        if (direction.sqrMagnitude < 0.001f)
         {
             return;
         }
 
         Quaternion targetRotation =
-            Quaternion.LookRotation(facingDirection);
+            Quaternion.LookRotation(direction);
 
         transform.rotation = Quaternion.Slerp(
             transform.rotation,
@@ -135,7 +165,8 @@ public class CharacterMovement : MonoBehaviour
     private void UpdateLocomotionState()
     {
         if (characterState.CurrentState == LocomotionState.Vaulting ||
-            characterState.CurrentState == LocomotionState.Sliding)
+            characterState.CurrentState == LocomotionState.Sliding ||
+            characterState.CurrentState == LocomotionState.PoleSpinning)
         {
             return;
         }
@@ -198,5 +229,19 @@ public class CharacterMovement : MonoBehaviour
             * Time.deltaTime;
 
         staminaSystem.ConsumeContinuous(staminaCost);
+    }
+
+    // Additional methods
+    public void ApplyReleaseMomentum(Vector3 momentum)
+    {
+        releaseMomentum =
+            new Vector3(
+                momentum.x,
+                0f,
+                momentum.z
+            );
+
+        verticalVelocity =
+            momentum.y;
     }
 }

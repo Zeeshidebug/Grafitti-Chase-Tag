@@ -18,18 +18,11 @@ public class ClimbController : MonoBehaviour
 
     private void TryClimb()
     {
-
-        Debug.Log("TryClimb is here! requesting input...");
-
         if (!movementIntent.Interaction)
             return;
 
-        Debug.Log("Input Called, checking for state...");
-
         if (characterState.CurrentState != LocomotionState.Airborne)
             return;
-
-        Debug.Log("State is Airborne, checking for candidate...");
 
         ClimbCandidate candidate =
             climbEvaluator.Evaluate(
@@ -38,9 +31,6 @@ public class ClimbController : MonoBehaviour
 
         if (candidate == null || !candidate.IsValid)
             return;
-
-        Debug.Log("Candidate is valid, executing climb...");
-
 
         climbExecutor.TryExecute(candidate);
     }

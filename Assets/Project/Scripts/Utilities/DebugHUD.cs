@@ -15,6 +15,8 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private ClimbEvaluator climbEvaluator;
     [SerializeField] private StaminaSystem staminaSystem;
     [SerializeField] private SlideExecutor slideExecutor;
+    [SerializeField] private PoleSpinEvaluator poleSpinEvaluator;
+    [SerializeField] private PoleSpinExecutor poleSpinExecutor;
 
     private bool showDebug = true;
 
@@ -151,6 +153,10 @@ public class DebugHUD : MonoBehaviour
 
             GUILayout.Label(
             $"Interaction: {inputHandler.Interaction}"
+            );
+
+            GUILayout.Label(
+            $"Interaction Held: {inputHandler.InteractionHeld}"
             );
         }
 
@@ -319,6 +325,35 @@ public class DebugHUD : MonoBehaviour
 
                 GUILayout.Label(
                     $"Climb Result: {candidate.Result}"
+                );
+            }
+            else
+            {
+                GUILayout.Label(
+                    "No Candidate"
+                );
+            }
+        }
+
+        GUILayout.Space(5f);
+        GUILayout.Label("ACTION - POLE SPINNING");
+        GUILayout.Label("------------------------------");
+
+        if (poleSpinEvaluator != null)
+        {
+            PoleSpinCandidate candidate =
+                poleSpinEvaluator.Evaluate(
+                    parkourDetector.CurrentObstacle
+                );
+
+            if (candidate != null)
+            {
+                GUILayout.Label(
+                    $"Pole Spin: {candidate.IsValid}"
+                );
+
+                GUILayout.Label(
+                    $"Pole Spin Result: {candidate.Result}"
                 );
             }
             else

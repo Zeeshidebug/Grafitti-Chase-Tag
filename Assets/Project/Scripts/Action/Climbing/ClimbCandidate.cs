@@ -4,11 +4,6 @@ public enum ClimbValidationResult
 {
     Valid,
     NoObstacle,
-    TooHigh,
-    TooLow,
-    InvalidSurface,
-    NoClearance,
-    NoLandingSpace
 }
 
 public class ClimbCandidate

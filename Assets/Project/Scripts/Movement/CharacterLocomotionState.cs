@@ -5,4 +5,5 @@ public enum LocomotionState
     Vaulting,
     Sliding,
     Climbing,
+    PoleSpinning,
 }

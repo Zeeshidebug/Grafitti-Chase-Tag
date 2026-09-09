@@ -8,9 +8,18 @@ public class ParkourDetector : MonoBehaviour
     [SerializeField] private float maxObstacleHeight = 3f;
     [SerializeField] private LayerMask parkourLayer;
 
+    [Header("Pole Detection")]
+    [SerializeField] private float poleDetectionRadius = 1.5f;
+    [SerializeField] private LayerMask poleLayer;
+
     private CharacterController characterController;
 
     public ParkourObstacleData CurrentObstacle { get; private set; }
+    public ParkourObstacleData CurrentPole { get; private set; }
+
+    public bool PoleDetected =>
+        CurrentPole != null &&
+        CurrentPole.IsValid;
 
     public bool ObstacleDetected =>
         CurrentObstacle != null &&
@@ -27,6 +36,7 @@ public class ParkourDetector : MonoBehaviour
     private void Update()
     {
         DetectObstacle();
+        DetectPole();
     }
 
     private void DetectObstacle()
@@ -118,6 +128,81 @@ public class ParkourDetector : MonoBehaviour
         obstacle.Height =
             topHit.point.y -
             transform.position.y;
+    }
+
+    private void DetectPole()
+    {
+        Collider[] colliders =
+            Physics.OverlapSphere(
+                transform.position,
+                poleDetectionRadius,
+                poleLayer
+            );
+
+        if (colliders.Length == 0)
+        {
+            CurrentPole = null;
+            return;
+        }
+
+        Collider closestCollider = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (Collider collider in colliders)
+        {
+            Vector3 closestPoint =
+                collider.ClosestPoint(transform.position);
+
+            float distance =
+                Vector3.Distance(
+                    transform.position,
+                    closestPoint
+                );
+
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestCollider = collider;
+            }
+        }
+
+        if (closestCollider == null)
+        {
+            CurrentPole = null;
+            return;
+        }
+
+        Vector3 poleCenter =
+            closestCollider.bounds.center;
+
+        Vector3 radialDirection =
+            transform.position - poleCenter;
+
+        radialDirection.y = 0f;
+
+        if (radialDirection.sqrMagnitude <= 0.001f)
+        {
+            CurrentPole = null;
+            return;
+        }
+
+        radialDirection.Normalize();
+
+        CurrentPole = new ParkourObstacleData
+        {
+            IsValid = true,
+
+            // Axis point at character height.
+            HitPoint = new Vector3(
+                poleCenter.x,
+                transform.position.y,
+                poleCenter.z
+            ),
+
+            SurfaceNormal = radialDirection,
+
+            Distance = closestDistance
+        };
     }
 
     // private void OnDrawGizmosSelected()

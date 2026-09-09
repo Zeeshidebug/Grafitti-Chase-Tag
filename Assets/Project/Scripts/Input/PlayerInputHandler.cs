@@ -9,6 +9,7 @@ public class PlayerInputHandler : MonoBehaviour
     public bool DebugNext { get; private set; }
     public bool DebugPrevious { get; private set; }
     public bool Interaction { get; private set; }
+    public bool InteractionHeld { get; private set; }
     public Vector2 LookInput { get; private set; }
 
     private InputSystem_Actions inputActions;
@@ -38,5 +39,6 @@ public class PlayerInputHandler : MonoBehaviour
         DebugNext = inputActions.Player.DebugNext.WasPressedThisFrame();
         DebugPrevious = inputActions.Player.DebugPrevious.WasPressedThisFrame();
         Interaction = inputActions.Player.Interaction.WasPressedThisFrame();
+        InteractionHeld = inputActions.Player.Interaction.IsPressed();
     }
 }
