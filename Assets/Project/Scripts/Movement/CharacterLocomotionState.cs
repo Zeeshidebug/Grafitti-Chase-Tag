@@ -6,4 +6,6 @@ public enum LocomotionState
     Sliding,
     Climbing,
     PoleSpinning,
+    WallRebounding,
+    TicTacing
 }

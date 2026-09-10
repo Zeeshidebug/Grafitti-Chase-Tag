@@ -2651,6 +2651,11 @@ GameObject:
   - component: {fileID: 922158824}
   - component: {fileID: 922158823}
   - component: {fileID: 922158822}
+  - component: {fileID: 922158825}
+  - component: {fileID: 922158826}
+  - component: {fileID: 922158829}
+  - component: {fileID: 922158828}
+  - component: {fileID: 922158827}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -3064,6 +3069,88 @@ MonoBehaviour:
   poleSpinEvaluator: {fileID: 922158823}
   poleSpinExecutor: {fileID: 922158822}
   parkourDetector: {fileID: 922158811}
+--- !u!114 &922158825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e224045e3ae1e6241994ba0f7809c986, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WallReboundEvaluator
+  minimumReboundSpeed: 7
+--- !u!114 &922158826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 060dbc17f613c0d43a7fc31e990f3381, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WallReboundExecutor
+  evaluator: {fileID: 922158825}
+  characterMovement: {fileID: 922158806}
+  characterState: {fileID: 922158809}
+  staminaSystem: {fileID: 922158816}
+  parkourDetector: {fileID: 922158811}
+  staminaCostMultiplier: 0.1
+  reboundSpeedMultiplier: 1
+  reboundDuration: 0.25
+--- !u!114 &922158827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce8cce7e26bdf1a4486d23d9d4a02a7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TicTacExecutor
+  characterMovement: {fileID: 922158806}
+  characterState: {fileID: 922158809}
+  staminaSystem: {fileID: 922158816}
+  staminaCostMultiplier: 0.25
+  verticalLaunchVelocity: 7
+  ticTacDuration: 0.5
+--- !u!114 &922158828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94b6bab6377e4d442893529ae5fe767d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TicTacController
+  ticTacEvaluator: {fileID: 922158829}
+  ticTacExecutor: {fileID: 922158827}
+  parkourDetector: {fileID: 922158811}
+  characterMovement: {fileID: 922158806}
+  characterState: {fileID: 922158809}
+--- !u!114 &922158829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 922158800}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63412234586c044409b2fe5c77acb2c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TicTacEvaluator
+  maxTicTacDistance: 1.5
+  launchSpeedMultiplier: 1
 --- !u!1 &933264935
 GameObject:
   m_ObjectHideFlags: 0

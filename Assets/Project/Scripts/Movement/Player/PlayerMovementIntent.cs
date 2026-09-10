@@ -11,6 +11,7 @@ public class PlayerMovementIntent : MonoBehaviour
     public bool Sprinting { get; private set; }
     public bool Interaction { get; private set; }
     public bool InteractionHeld { get; private set; }
+    public bool JumpPressed { get; private set; }
 
     private PlayerInputHandler inputHandler;
 
@@ -33,6 +34,7 @@ public class PlayerMovementIntent : MonoBehaviour
         Vector2 input = inputHandler.MoveInput;
         Interaction = inputHandler.Interaction;
         InteractionHeld = inputHandler.InteractionHeld;
+        JumpPressed = inputHandler.JumpPressed;
 
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;

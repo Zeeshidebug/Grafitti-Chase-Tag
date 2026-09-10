@@ -30,13 +30,15 @@ public class CharacterMovement : MonoBehaviour
     private StaminaSystem staminaSystem;
     private SlideExecutor slideExecutor;
     private PoleSpinExecutor poleSpinExecutor;
+    private WallReboundExecutor wallReboundExecutor;
+    private TicTacExecutor ticTacExecutor;
 
     private float currentSpeed;
     private float verticalVelocity;
 
     public float CurrentSpeed => currentSpeed;
-    public float VerticalVelocity => verticalVelocity; private Vector3 movementDirection;
-
+    public Vector3 CurrentVelocity { get; private set; }
+    public float VerticalVelocity => verticalVelocity;
     private Vector3 releaseMomentum;
 
     private void Awake()
@@ -49,6 +51,8 @@ public class CharacterMovement : MonoBehaviour
         staminaSystem = GetComponent<StaminaSystem>();
         slideExecutor = GetComponent<SlideExecutor>();
         poleSpinExecutor = GetComponent<PoleSpinExecutor>();
+        wallReboundExecutor = GetComponent<WallReboundExecutor>();
+        ticTacExecutor = GetComponent<TicTacExecutor>();
     }
 
     private void Update()
@@ -75,6 +79,23 @@ public class CharacterMovement : MonoBehaviour
             direction =
                 poleSpinExecutor.CurrentSpinDirection;
         }
+        else if (wallReboundExecutor.IsExecuting)
+        {
+            direction =
+                wallReboundExecutor.CurrentReboundDirection;
+
+            // currentSpeed =
+            //     wallReboundExecutor.ReboundSpeed;
+        }
+
+        else if (ticTacExecutor.IsExecuting)
+        {
+            direction =
+                ticTacExecutor.CurrentTicTacDirection;
+
+            currentSpeed =
+                ticTacExecutor.LaunchSpeed;
+        }
         else
         {
             direction = movementIntent.MovementDirection;
@@ -94,6 +115,8 @@ public class CharacterMovement : MonoBehaviour
         velocity += releaseMomentum;
 
         velocity.y = verticalVelocity;
+
+        CurrentVelocity = velocity;
 
         releaseMomentum =
     Vector3.MoveTowards(
@@ -115,6 +138,16 @@ public class CharacterMovement : MonoBehaviour
         {
             direction =
                 poleSpinExecutor.CurrentSpinDirection;
+        }
+        else if (wallReboundExecutor.IsExecuting)
+        {
+            direction =
+                wallReboundExecutor.CurrentReboundDirection;
+        }
+        else if (ticTacExecutor.IsExecuting)
+        {
+            direction =
+                ticTacExecutor.CurrentTicTacDirection;
         }
         else
         {
@@ -243,5 +276,10 @@ public class CharacterMovement : MonoBehaviour
 
         verticalVelocity =
             momentum.y;
+    }
+
+    public void SetVerticalVelocity(float velocity)
+    {
+        verticalVelocity = velocity;
     }
 }
