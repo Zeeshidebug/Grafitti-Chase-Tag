@@ -10,7 +10,7 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float speedChangeRate = 8f;
-    [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float rotationSpeed = 5f;
     [SerializeField] private float sprintStaminaCostRate = 0.05f;
     [SerializeField] private float jumpStaminaCostRate = 0.25f;
 

@@ -10,7 +10,6 @@ public class PlayerInputHandler : MonoBehaviour
     public bool DebugPrevious { get; private set; }
     public bool Interaction { get; private set; }
     public bool InteractionHeld { get; private set; }
-    public Vector2 LookInput { get; private set; }
 
     private InputSystem_Actions inputActions;
 
@@ -34,7 +33,6 @@ public class PlayerInputHandler : MonoBehaviour
         MoveInput = inputActions.Player.Move.ReadValue<Vector2>();
         SprintHeld = inputActions.Player.Sprint.IsPressed();
         JumpPressed = inputActions.Player.Jump.WasPressedThisFrame();
-        LookInput = inputActions.Player.Look.ReadValue<Vector2>();
         DebugLog = inputActions.Player.DebugMenu.WasPressedThisFrame();
         DebugNext = inputActions.Player.DebugNext.WasPressedThisFrame();
         DebugPrevious = inputActions.Player.DebugPrevious.WasPressedThisFrame();

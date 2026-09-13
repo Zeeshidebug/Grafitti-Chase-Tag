@@ -6,6 +6,11 @@ public class PlayerMovementIntent : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform cameraTransform;
 
+    [Header("Facing")]
+    [SerializeField] private float facingChangeDelay = 0.35f;
+
+
+
     public Vector3 MovementDirection { get; private set; }
     public Vector3 FacingDirection { get; private set; }
     public bool Sprinting { get; private set; }
@@ -14,6 +19,7 @@ public class PlayerMovementIntent : MonoBehaviour
     public bool JumpPressed { get; private set; }
 
     private PlayerInputHandler inputHandler;
+    private float facingChangeTimer;
 
     private void Awake()
     {
@@ -28,10 +34,11 @@ public class PlayerMovementIntent : MonoBehaviour
     private void CalculateIntent()
     {
         Sprinting =
-        inputHandler.SprintHeld &&
-        inputHandler.MoveInput.sqrMagnitude > 0.01f;
+            inputHandler.SprintHeld &&
+            inputHandler.MoveInput.sqrMagnitude > 0.01f;
 
         Vector2 input = inputHandler.MoveInput;
+
         Interaction = inputHandler.Interaction;
         InteractionHeld = inputHandler.InteractionHeld;
         JumpPressed = inputHandler.JumpPressed;
@@ -54,6 +61,29 @@ public class PlayerMovementIntent : MonoBehaviour
             MovementDirection.Normalize();
         }
 
-        FacingDirection = forward;
+        if (MovementDirection.sqrMagnitude > 0.001f)
+        {
+            Vector3 movementDirection =
+                MovementDirection.normalized;
+
+            if (input.y > 0.1f)
+            {
+                FacingDirection = movementDirection;
+                facingChangeTimer = 0f;
+            }
+            else
+            {
+                facingChangeTimer += Time.deltaTime;
+
+                if (facingChangeTimer >= facingChangeDelay)
+                {
+                    FacingDirection = movementDirection;
+                }
+            }
+        }
+        else
+        {
+            facingChangeTimer = 0f;
+        }
     }
 }
