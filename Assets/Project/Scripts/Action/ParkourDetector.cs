@@ -12,10 +12,14 @@ public class ParkourDetector : MonoBehaviour
     [SerializeField] private float poleDetectionRadius = 1.5f;
     [SerializeField] private LayerMask poleLayer;
 
+    [Header("Wall Rebound Detection")]
+    [SerializeField] private LayerMask wallReboundLayer;
+
     private CharacterController characterController;
 
     public ParkourObstacleData CurrentObstacle { get; private set; }
     public ParkourObstacleData CurrentPole { get; private set; }
+    public ParkourObstacleData CurrentWallReboundSurface { get; private set; }
 
     public bool PoleDetected =>
         CurrentPole != null &&
@@ -37,6 +41,7 @@ public class ParkourDetector : MonoBehaviour
     {
         DetectObstacle();
         DetectPole();
+        DetectWallReboundSurface();
     }
 
     private void DetectObstacle()
@@ -202,6 +207,39 @@ public class ParkourDetector : MonoBehaviour
             SurfaceNormal = radialDirection,
 
             Distance = closestDistance
+        };
+    }
+
+    private void DetectWallReboundSurface()
+    {
+        GetCapsulePoints(
+            out Vector3 point1,
+            out Vector3 point2,
+            out float radius
+        );
+
+        bool hitWall = Physics.CapsuleCast(
+            point1,
+            point2,
+            radius,
+            transform.forward,
+            out RaycastHit hit,
+            detectionDistance,
+            wallReboundLayer
+        );
+
+        if (!hitWall)
+        {
+            CurrentWallReboundSurface = null;
+            return;
+        }
+
+        CurrentWallReboundSurface = new ParkourObstacleData
+        {
+            IsValid = true,
+            HitPoint = hit.point,
+            SurfaceNormal = hit.normal,
+            Distance = hit.distance
         };
     }
 

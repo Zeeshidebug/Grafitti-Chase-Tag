@@ -4,7 +4,8 @@ public enum WallReboundValidationResult
 {
     Valid,
     NoWall,
-    TooSlow
+    TooSlow,
+    InvalidSurface
 }
 
 public class WallReboundCandidate

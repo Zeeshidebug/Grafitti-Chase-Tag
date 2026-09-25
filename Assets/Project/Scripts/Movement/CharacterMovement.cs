@@ -32,6 +32,7 @@ public class CharacterMovement : MonoBehaviour
     private PoleSpinExecutor poleSpinExecutor;
     private WallReboundExecutor wallReboundExecutor;
     private TicTacExecutor ticTacExecutor;
+    private BuffNerfController buffNerfController;
 
     private float currentSpeed;
     private float verticalVelocity;
@@ -53,6 +54,7 @@ public class CharacterMovement : MonoBehaviour
         poleSpinExecutor = GetComponent<PoleSpinExecutor>();
         wallReboundExecutor = GetComponent<WallReboundExecutor>();
         ticTacExecutor = GetComponent<TicTacExecutor>();
+        buffNerfController = GetComponent<BuffNerfController>();
     }
 
     private void Update()
@@ -84,10 +86,9 @@ public class CharacterMovement : MonoBehaviour
             direction =
                 wallReboundExecutor.CurrentReboundDirection;
 
-            // currentSpeed =
-            //     wallReboundExecutor.ReboundSpeed;
+            currentSpeed =
+                wallReboundExecutor.ReboundSpeed;
         }
-
         else if (ticTacExecutor.IsExecuting)
         {
             direction =
@@ -199,7 +200,8 @@ public class CharacterMovement : MonoBehaviour
     {
         if (characterState.CurrentState == LocomotionState.Vaulting ||
             characterState.CurrentState == LocomotionState.Sliding ||
-            characterState.CurrentState == LocomotionState.PoleSpinning)
+            characterState.CurrentState == LocomotionState.PoleSpinning ||
+            characterState.CurrentState == LocomotionState.WallRebounding)
         {
             return;
         }
@@ -227,6 +229,13 @@ public class CharacterMovement : MonoBehaviour
             baseSpeed = sprintSpeed;
         else
             baseSpeed = moveSpeed;
+
+        float movementSpeedMultiplier =
+            buffNerfController.GetStatMultiplier(
+                StatType.MovementSpeed
+            );
+
+        baseSpeed *= movementSpeedMultiplier;
 
         if (slideExecutor.IsExecuting)
             return baseSpeed * slideExecutor.SlideSpeedMultiplier;

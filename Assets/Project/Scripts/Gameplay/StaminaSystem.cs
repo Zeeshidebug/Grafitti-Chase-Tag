@@ -5,6 +5,8 @@ public class StaminaSystem : MonoBehaviour
     [SerializeField] private float maxStamina = 100f;
     [SerializeField] private float regenerationRate = 0.1f;
 
+    private BuffNerfController buffNerfController;
+
     private float currentStamina;
 
     public float MaxStamina => maxStamina;
@@ -17,6 +19,7 @@ public class StaminaSystem : MonoBehaviour
     private void Awake()
     {
         currentStamina = maxStamina;
+        buffNerfController = GetComponent<BuffNerfController>();
     }
 
     private void Update()
@@ -31,10 +34,16 @@ public class StaminaSystem : MonoBehaviour
 
     public bool TryConsume(float amount)
     {
-        if (!CanAfford(amount))
+        float finalCost =
+            amount *
+            buffNerfController.GetStatMultiplier(
+                StatType.StaminaCost
+            );
+
+        if (!CanAfford(finalCost))
             return false;
 
-        currentStamina -= amount;
+        currentStamina -= finalCost;
 
         if (currentStamina <= 0f)
         {
@@ -47,8 +56,14 @@ public class StaminaSystem : MonoBehaviour
 
     public void ConsumeContinuous(float amount)
     {
+        float finalAmount =
+            amount *
+            buffNerfController.GetStatMultiplier(
+                StatType.StaminaCost
+            );
+
         currentStamina = Mathf.Max(
-            currentStamina - amount,
+            currentStamina - finalAmount,
             0f
         );
 
@@ -73,8 +88,16 @@ public class StaminaSystem : MonoBehaviour
 
     public void Regenerate(float deltaTime)
     {
+        float regenerationMultiplier =
+            buffNerfController.GetStatMultiplier(
+                StatType.StaminaRegen
+            );
+
         float regenerationAmount =
-            MaxStamina * regenerationRate * deltaTime;
+            MaxStamina *
+            regenerationRate *
+            regenerationMultiplier *
+            deltaTime;
 
         Restore(regenerationAmount);
     }

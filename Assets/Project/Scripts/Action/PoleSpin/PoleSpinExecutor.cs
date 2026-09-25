@@ -18,6 +18,7 @@ public class PoleSpinExecutor : MonoBehaviour
     [Header("Stamina")]
     [SerializeField] private float staminaCostMultiplier = 0.5f;
     [SerializeField] private float minimumStaminaAfterSpin = 20f;
+    [SerializeField] private float minimumRequiredStamina = 30f;
 
     public bool IsExecuting
     {
@@ -66,6 +67,9 @@ public class PoleSpinExecutor : MonoBehaviour
 
         if (candidate == null ||
             !candidate.IsValid)
+            return false;
+
+        if (staminaSystem.CurrentStamina < minimumRequiredStamina)
             return false;
 
         CurrentPolePosition =
@@ -126,10 +130,13 @@ public class PoleSpinExecutor : MonoBehaviour
             targetPosition -
             transform.position;
 
-        if (movement.sqrMagnitude > 0.001f)
+        Vector3 spinDirection = movement;
+        spinDirection.y = 0f;
+
+        if (spinDirection.sqrMagnitude > 0.001f)
         {
             CurrentSpinDirection =
-                movement.normalized;
+                spinDirection.normalized;
         }
 
         characterController.Move(

@@ -4,6 +4,7 @@ public class WallReboundEvaluator : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private float minimumReboundSpeed = 4f;
+    [SerializeField] private float minimumWallAngle = 70f;
 
     public WallReboundCandidate Evaluate(
         ParkourObstacleData obstacle,
@@ -37,6 +38,21 @@ public class WallReboundEvaluator : MonoBehaviour
             candidate.IsValid = false;
             candidate.Result =
                 WallReboundValidationResult.TooSlow;
+
+            return candidate;
+        }
+
+        float surfaceAngle =
+        Vector3.Angle(
+            obstacle.SurfaceNormal,
+            Vector3.up
+        );
+
+        if (surfaceAngle < minimumWallAngle)
+        {
+            candidate.IsValid = false;
+            candidate.Result =
+                WallReboundValidationResult.InvalidSurface;
 
             return candidate;
         }

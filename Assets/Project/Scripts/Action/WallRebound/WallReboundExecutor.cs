@@ -49,18 +49,12 @@ public class WallReboundExecutor : MonoBehaviour
         if (IsExecuting)
             return;
 
-        Debug.Log(
-$"Hit: {hit.collider.name}, " +
-$"Obstacle: {parkourDetector.CurrentObstacle}, " +
-$"Velocity: {characterMovement.CurrentVelocity}"
-);
-
         Vector3 velocity =
             characterMovement.CurrentVelocity;
 
         WallReboundCandidate candidate =
             evaluator.Evaluate(
-                parkourDetector.CurrentObstacle,
+                parkourDetector.CurrentWallReboundSurface,
                 velocity
             );
 

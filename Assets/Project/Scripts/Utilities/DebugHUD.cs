@@ -17,6 +17,7 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private SlideExecutor slideExecutor;
     [SerializeField] private PoleSpinEvaluator poleSpinEvaluator;
     [SerializeField] private PoleSpinExecutor poleSpinExecutor;
+    [SerializeField] private BuffNerfController buffNerfController;
 
     private bool showDebug = true;
 
@@ -24,7 +25,8 @@ public class DebugHUD : MonoBehaviour
     {
         Player,
         Obstacle,
-        Parkour
+        Parkour,
+        BuffNerf
     }
 
     private DebugPage currentPage = DebugPage.Player;
@@ -32,6 +34,7 @@ public class DebugHUD : MonoBehaviour
     private void Awake()
     {
         inputHandler = GetComponent<PlayerInputHandler>();
+
     }
 
     private void Update()
@@ -117,6 +120,10 @@ public class DebugHUD : MonoBehaviour
 
             case DebugPage.Parkour:
                 DrawParkourPage();
+                break;
+
+            case DebugPage.BuffNerf:
+                DrawBuffNerfPage();
                 break;
         }
 
@@ -364,5 +371,25 @@ public class DebugHUD : MonoBehaviour
             }
         }
 
+    }
+
+    private void DrawBuffNerfPage()
+    {
+        GUILayout.Label("ACTIVE BUFFS/NERFS");
+        GUILayout.Label("------------------------------");
+
+        if (buffNerfController != null)
+        {
+            foreach (var activeEffect in buffNerfController.ActiveEffects)
+            {
+                GUILayout.Label(
+                    $"Effect: {activeEffect.EffectData.name}, " +
+                    $"Type: {activeEffect.EffectData.effectType}, " +
+                    $"Stat: {activeEffect.EffectData.statType}, " +
+                    $"Multiplier: {activeEffect.EffectData.multiplier:F2}, " +
+                    $"Remaining Duration: {activeEffect.RemainingDuration:F2}"
+                );
+            }
+        }
     }
 }
