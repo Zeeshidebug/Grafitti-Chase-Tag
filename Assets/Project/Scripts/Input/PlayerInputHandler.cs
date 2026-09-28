@@ -10,6 +10,7 @@ public class PlayerInputHandler : MonoBehaviour
     public bool DebugPrevious { get; private set; }
     public bool Interaction { get; private set; }
     public bool InteractionHeld { get; private set; }
+    public bool IsTagging { get; private set; }
 
     private InputSystem_Actions inputActions;
 
@@ -38,5 +39,6 @@ public class PlayerInputHandler : MonoBehaviour
         DebugPrevious = inputActions.Player.DebugPrevious.WasPressedThisFrame();
         Interaction = inputActions.Player.Interaction.WasPressedThisFrame();
         InteractionHeld = inputActions.Player.Interaction.IsPressed();
+        IsTagging = inputActions.Player.Tagging.WasPressedThisFrame();
     }
 }

@@ -6,17 +6,27 @@ public class BuffNerfToken : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        RoleController roleController =
+         other.GetComponentInParent<RoleController>();
+
+        if (roleController == null)
+            return;
+
         BuffNerfController controller =
-            other.GetComponent<BuffNerfController>();
+            other.GetComponentInParent<BuffNerfController>();
 
         if (controller == null)
             return;
 
-        controller.ApplyEffect(effect);
+        if (effect.statType == StatType.TagSprayRange &&
+            roleController.IsEvader || effect.statType == StatType.TagSprayRadius &&
+            roleController.IsEvader)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-        Debug.Log(
-            $"Applied effect: {effect.name}"
-        );
+        controller.ApplyEffect(effect);
 
         Destroy(gameObject);
     }

@@ -9,14 +9,13 @@ public class PlayerMovementIntent : MonoBehaviour
     [Header("Facing")]
     [SerializeField] private float facingChangeDelay = 0.35f;
 
-
-
     public Vector3 MovementDirection { get; private set; }
     public Vector3 FacingDirection { get; private set; }
     public bool Sprinting { get; private set; }
     public bool Interaction { get; private set; }
     public bool InteractionHeld { get; private set; }
     public bool JumpPressed { get; private set; }
+    public bool Tagging { get; private set; }
 
     private PlayerInputHandler inputHandler;
     private float facingChangeTimer;
@@ -42,6 +41,7 @@ public class PlayerMovementIntent : MonoBehaviour
         Interaction = inputHandler.Interaction;
         InteractionHeld = inputHandler.InteractionHeld;
         JumpPressed = inputHandler.JumpPressed;
+        Tagging = inputHandler.IsTagging;
 
         Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;

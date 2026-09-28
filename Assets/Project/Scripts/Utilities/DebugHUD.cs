@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerInputHandler))]
@@ -18,6 +19,11 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private PoleSpinEvaluator poleSpinEvaluator;
     [SerializeField] private PoleSpinExecutor poleSpinExecutor;
     [SerializeField] private BuffNerfController buffNerfController;
+    [SerializeField] private RoundController roundController;
+    [SerializeField] private GameController gameController;
+    [SerializeField] private RoleController aiRole;
+    [SerializeField] private RoleController playerRole;
+    [SerializeField] private ScoreController scoreController;
 
     private bool showDebug = true;
 
@@ -26,7 +32,8 @@ public class DebugHUD : MonoBehaviour
         Player,
         Obstacle,
         Parkour,
-        BuffNerf
+        BuffNerf,
+        Round
     }
 
     private DebugPage currentPage = DebugPage.Player;
@@ -124,6 +131,10 @@ public class DebugHUD : MonoBehaviour
 
             case DebugPage.BuffNerf:
                 DrawBuffNerfPage();
+                break;
+
+            case DebugPage.Round:
+                DrawRoundPage();
                 break;
         }
 
@@ -390,6 +401,48 @@ public class DebugHUD : MonoBehaviour
                     $"Remaining Duration: {activeEffect.RemainingDuration:F2}"
                 );
             }
+        }
+    }
+
+    private void DrawRoundPage()
+    {
+        GUILayout.Label("ROUND SYSTEMS");
+        GUILayout.Label("------------------------------");
+
+        if (roundController != null)
+        {
+            GUILayout.Label(
+                $"Round timer: {roundController.RemainingTime:F2}"
+            );
+
+            GUILayout.Label(
+                $"Round Status: {roundController.CurrentState}"
+            );
+
+            GUILayout.Label(
+                $"Current Player Role: {playerRole.CurrentRole}"
+            );
+
+            GUILayout.Label(
+                $"Current AI Role: {aiRole.CurrentRole}"
+            );
+        }
+
+        GUILayout.Label("GAME SYSTEM");
+        GUILayout.Label("------------------------------");
+
+        if (gameController != null)
+        {
+            GUILayout.Label(
+                $"Current Round: {gameController.CurrentRound}"
+            );
+
+            GUILayout.Label(
+                $"Game Status: {gameController.Status}"
+            );
+            GUILayout.Label(
+                $"Current Score; Player: {scoreController.PlayerScore} , AI: {scoreController.AIScore} "
+            );
         }
     }
 }

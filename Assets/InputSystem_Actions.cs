@@ -172,6 +172,15 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Tagging"",
+                    ""type"": ""Button"",
+                    ""id"": ""6d399e2b-56b6-45f3-8fc7-23f840542cb1"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -317,6 +326,17 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""action"": ""Interaction"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""4248c04a-2c56-4b1f-bd39-79c45034f1be"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Tagging"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -395,6 +415,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player_DebugNext = m_Player.FindAction("DebugNext", throwIfNotFound: true);
         m_Player_DebugPrevious = m_Player.FindAction("DebugPrevious", throwIfNotFound: true);
         m_Player_Interaction = m_Player.FindAction("Interaction", throwIfNotFound: true);
+        m_Player_Tagging = m_Player.FindAction("Tagging", throwIfNotFound: true);
     }
 
     ~@InputSystem_Actions()
@@ -484,6 +505,7 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_DebugNext;
     private readonly InputAction m_Player_DebugPrevious;
     private readonly InputAction m_Player_Interaction;
+    private readonly InputAction m_Player_Tagging;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -531,6 +553,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Interaction".
         /// </summary>
         public InputAction @Interaction => m_Wrapper.m_Player_Interaction;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Tagging".
+        /// </summary>
+        public InputAction @Tagging => m_Wrapper.m_Player_Tagging;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -584,6 +610,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Interaction.started += instance.OnInteraction;
             @Interaction.performed += instance.OnInteraction;
             @Interaction.canceled += instance.OnInteraction;
+            @Tagging.started += instance.OnTagging;
+            @Tagging.performed += instance.OnTagging;
+            @Tagging.canceled += instance.OnTagging;
         }
 
         /// <summary>
@@ -622,6 +651,9 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Interaction.started -= instance.OnInteraction;
             @Interaction.performed -= instance.OnInteraction;
             @Interaction.canceled -= instance.OnInteraction;
+            @Tagging.started -= instance.OnTagging;
+            @Tagging.performed -= instance.OnTagging;
+            @Tagging.canceled -= instance.OnTagging;
         }
 
         /// <summary>
@@ -790,5 +822,12 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnInteraction(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Tagging" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnTagging(InputAction.CallbackContext context);
     }
 }
