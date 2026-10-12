@@ -42,8 +42,6 @@ public class GameController : MonoBehaviour
 
         currentRound++;
 
-        Debug.Log($"START ROUND {currentRound}");
-
         RotateRoles();
         roundController.StartRound();
     }
@@ -52,8 +50,6 @@ public class GameController : MonoBehaviour
     {
         if (gameStatus != GameStatus.Playing)
             return;
-
-        Debug.Log($"ROUND {currentRound} FINISHED — Winner: {winner}");
 
         AwardRoundScore(winner);
 
@@ -135,7 +131,6 @@ public class GameController : MonoBehaviour
             aiRoleController.SetRole(CharacterRole.Chaser);
         }
 
-        Debug.Log($"Initiate Role, Player: {playerRoleController.CurrentRole}, AI: {aiRoleController.CurrentRole}");
     }
 
     private void RotateRoles()
@@ -150,7 +145,5 @@ public class GameController : MonoBehaviour
         aiRoleController.SetRole(
             currentPlayerRole
         );
-
-        Debug.Log($"Swapped Role, Player: {playerRoleController.CurrentRole}, AI: {aiRoleController.CurrentRole}");
     }
 }

@@ -6,6 +6,7 @@ public class ClimbExecutor : MonoBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private CharacterState characterState;
     [SerializeField] private StaminaSystem staminaSystem;
+    [SerializeField] private Animator animator;
 
 
     [Header("Climb Settings")]
@@ -60,6 +61,8 @@ public class ClimbExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.Climbing
         );
+
+        animator.SetTrigger("Climb");
 
         return true;
     }

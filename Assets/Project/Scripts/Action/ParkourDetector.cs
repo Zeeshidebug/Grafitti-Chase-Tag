@@ -42,6 +42,7 @@ public class ParkourDetector : MonoBehaviour
         DetectObstacle();
         DetectPole();
         DetectWallReboundSurface();
+
     }
 
     private void DetectObstacle()
@@ -65,6 +66,7 @@ public class ParkourDetector : MonoBehaviour
         if (!hitObstacle)
         {
             CurrentObstacle = null;
+            Debug.Log("No obstacle detected.");
             return;
         }
 

@@ -7,6 +7,7 @@ public class TaggingController : MonoBehaviour
     [SerializeField] private StaminaSystem staminaSystem;
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private BuffNerfController buffNerfController;
+    [SerializeField] private Animator animator;
 
     [Header("Tagging")]
     [SerializeField] private float staminaCostMultiplier = 0.5f;
@@ -51,6 +52,8 @@ public class TaggingController : MonoBehaviour
         cooldownTimer = cooldownDuration;
 
         PerformTagSpray();
+
+        animator.SetTrigger("Tagging");
 
         return true;
     }

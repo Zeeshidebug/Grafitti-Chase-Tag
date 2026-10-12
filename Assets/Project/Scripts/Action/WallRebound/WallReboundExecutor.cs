@@ -8,6 +8,7 @@ public class WallReboundExecutor : MonoBehaviour
     [SerializeField] private CharacterState characterState;
     [SerializeField] private StaminaSystem staminaSystem;
     [SerializeField] private ParkourDetector parkourDetector;
+    [SerializeField] private Animator animator;
 
     [Header("Settings")]
     [SerializeField] private float staminaCostMultiplier = 0.1f;
@@ -108,6 +109,8 @@ public class WallReboundExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.WallRebounding
         );
+
+        animator.SetTrigger("WallRebound");
 
         return true;
     }

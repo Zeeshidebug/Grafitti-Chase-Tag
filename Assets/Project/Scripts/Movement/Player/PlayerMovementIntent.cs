@@ -86,4 +86,30 @@ public class PlayerMovementIntent : MonoBehaviour
             facingChangeTimer = 0f;
         }
     }
+
+    public float StrafeAmount
+    {
+        get
+        {
+            if (MovementDirection.sqrMagnitude < 0.001f)
+                return 0f;
+
+            Vector3 movement =
+                MovementDirection.normalized;
+
+            Vector3 facing =
+                FacingDirection.normalized;
+
+            Vector3 right =
+                Vector3.Cross(
+                    Vector3.up,
+                    facing
+                );
+
+            return Vector3.Dot(
+                movement,
+                right
+            );
+        }
+    }
 }

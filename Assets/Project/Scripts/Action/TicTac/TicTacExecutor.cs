@@ -6,6 +6,7 @@ public class TicTacExecutor : MonoBehaviour
     [SerializeField] private CharacterMovement characterMovement;
     [SerializeField] private CharacterState characterState;
     [SerializeField] private StaminaSystem staminaSystem;
+    [SerializeField] private Animator animator;
 
     [Header("Settings")]
     [SerializeField] private float staminaCostMultiplier = 0.25f;
@@ -79,6 +80,8 @@ public class TicTacExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.TicTacing
         );
+
+        animator.SetTrigger("TicTac");
 
         return true;
     }

@@ -7,6 +7,7 @@ public class PoleSpinExecutor : MonoBehaviour
     [SerializeField] private CharacterState characterState;
     [SerializeField] private CharacterMovement characterMovement;
     [SerializeField] private StaminaSystem staminaSystem;
+    [SerializeField] private Animator animator;
 
     [Header("Settings")]
     [SerializeField] private float spinSpeed = 180f;
@@ -100,6 +101,8 @@ public class PoleSpinExecutor : MonoBehaviour
             LocomotionState.PoleSpinning
         );
 
+        animator.SetTrigger("PoleIn");
+
         return true;
     }
 
@@ -156,6 +159,8 @@ public class PoleSpinExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.Airborne
         );
+
+        animator.SetTrigger("PoleOut");
     }
 
     private void PrepareReleaseMomentum()

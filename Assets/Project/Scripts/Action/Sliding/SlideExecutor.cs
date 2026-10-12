@@ -4,6 +4,7 @@ public class SlideExecutor : MonoBehaviour
 {
     [SerializeField]
     private CharacterState characterState;
+    [SerializeField] private Animator animator;
 
     [SerializeField]
     private float slideHeightRatio = 0.5f;
@@ -117,6 +118,8 @@ public class SlideExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.Sliding
         );
+
+        animator.SetTrigger("Slide");
 
         return true;
     }

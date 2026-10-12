@@ -9,6 +9,8 @@ public class VaultExecutor : MonoBehaviour
     [Header("Stamina")]
     [SerializeField] private float staminaCostRate = 0.3f;
 
+    [SerializeField] private Animator animator;
+
     private CharacterController characterController;
 
     private CharacterState characterMovement;
@@ -80,6 +82,8 @@ public class VaultExecutor : MonoBehaviour
         characterMovement.SetState(
             LocomotionState.Vaulting
         );
+
+        animator.SetTrigger("Vault");
 
         return true;
     }

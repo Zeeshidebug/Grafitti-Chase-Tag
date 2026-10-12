@@ -5,7 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(PlayerInputHandler))]
 public class CharacterMovement : MonoBehaviour
 {
-
+    [Header("References")]
+    [SerializeField] private Animator animator;
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
@@ -19,6 +20,9 @@ public class CharacterMovement : MonoBehaviour
 
     [Header("Jump")]
     [SerializeField] private float jumpHeight = 2f;
+    [SerializeField] private float highFallThreshold = 3f;
+    private float fallStartY;
+    private bool trackingFall;
 
     [Header("Release Momentum")]
     [SerializeField] private float releaseMomentumDecay = 5f;
@@ -38,9 +42,13 @@ public class CharacterMovement : MonoBehaviour
     private float verticalVelocity;
 
     public float CurrentSpeed => currentSpeed;
+    public float SprintSpeed => sprintSpeed;
     public Vector3 CurrentVelocity { get; private set; }
     public float VerticalVelocity => verticalVelocity;
     private Vector3 releaseMomentum;
+    private bool jumpAnimationActive;
+    private bool hasLeftGround;
+    // private float StrafeAmount;
 
     private void Awake()
     {
@@ -191,6 +199,11 @@ public class CharacterMovement : MonoBehaviour
                 Mathf.Sqrt(
                     jumpHeight * -2f * gravity
                 );
+
+            jumpAnimationActive = true;
+            hasLeftGround = false;
+
+            animator.SetTrigger("JumpIn");
         }
 
         verticalVelocity += gravity * Time.deltaTime;
@@ -201,22 +214,57 @@ public class CharacterMovement : MonoBehaviour
         if (characterState.CurrentState == LocomotionState.Vaulting ||
             characterState.CurrentState == LocomotionState.Sliding ||
             characterState.CurrentState == LocomotionState.PoleSpinning ||
-            characterState.CurrentState == LocomotionState.WallRebounding)
+            characterState.CurrentState == LocomotionState.WallRebounding ||
+            characterState.CurrentState == LocomotionState.Climbing)
         {
             return;
         }
 
-        if (characterController.isGrounded)
+        if (!characterController.isGrounded)
         {
+            if (jumpAnimationActive)
+            {
+                hasLeftGround = true;
+            }
+
+            if (!trackingFall)
+            {
+                fallStartY = transform.position.y;
+                trackingFall = true;
+            }
+
             characterState.SetState(
-                LocomotionState.Grounded
+                LocomotionState.Airborne
             );
 
             return;
         }
 
+        if (jumpAnimationActive && hasLeftGround)
+        {
+            if (trackingFall)
+            {
+                float fallDistance =
+                    fallStartY - transform.position.y;
+
+                if (fallDistance >= highFallThreshold)
+                {
+                    animator.SetTrigger("HighJumpOut");
+                }
+                else if (jumpAnimationActive && hasLeftGround)
+                {
+                    animator.SetTrigger("JumpOut");
+                }
+
+                trackingFall = false;
+            }
+
+            jumpAnimationActive = false;
+            hasLeftGround = false;
+        }
+
         characterState.SetState(
-            LocomotionState.Airborne
+            LocomotionState.Grounded
         );
     }
     private float CalculateFinalSpeed()
