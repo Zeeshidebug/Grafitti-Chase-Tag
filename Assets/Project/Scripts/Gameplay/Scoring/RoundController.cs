@@ -4,6 +4,9 @@ public class RoundController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GameController gameController;
+    [SerializeField] private BuffNerfSpawner buffNerfSpawner;
+    [SerializeField] private RoundOutcomeVFX roundOutcomeVFX;
+    [SerializeField] private RoundTransitionController roundTransitionController;
 
     [Header("Round")]
     [SerializeField] private float roundDuration = 120f;
@@ -17,11 +20,6 @@ public class RoundController : MonoBehaviour
     private RoundWinner roundWinner = RoundWinner.None;
 
     public RoundWinner RoundWinner => roundWinner;
-
-    private void Start()
-    {
-        StartRound();
-    }
 
     private void Update()
     {
@@ -40,17 +38,30 @@ public class RoundController : MonoBehaviour
     public void StartRound()
     {
         remainingTime = roundDuration;
+        roundWinner = RoundWinner.None;
         currentState = RoundState.Playing;
+
+        buffNerfSpawner.StartSpawning();
     }
+
 
     public void EndRound(RoundWinner winner)
     {
         if (currentState == RoundState.Finished)
             return;
 
+        if (winner == RoundWinner.None)
+            return;
+
         roundWinner = winner;
         currentState = RoundState.Finished;
 
-        gameController.OnRoundFinished(roundWinner);
+        buffNerfSpawner.StopSpawning();
+
+        roundOutcomeVFX.ShowOutcome(
+            roundWinner,
+            () => roundTransitionController.PlayRoundTransition(roundWinner)
+        );
     }
+
 }

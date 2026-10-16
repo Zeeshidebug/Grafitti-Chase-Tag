@@ -7,6 +7,7 @@ public class ClimbExecutor : MonoBehaviour
     [SerializeField] private CharacterState characterState;
     [SerializeField] private StaminaSystem staminaSystem;
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
 
 
     [Header("Climb Settings")]
@@ -43,7 +44,11 @@ public class ClimbExecutor : MonoBehaviour
         staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(climbCost))
+        {
+            staminaHUDController.NotifyInsufficientStamina();
             return false;
+        }
+
 
         startPosition =
             transform.position;

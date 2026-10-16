@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: TagRangeDown
   m_EditorClassIdentifier: Assembly-CSharp::BuffNerfEffect
   effectID: TagRangeDown
+  iconSprite: {fileID: 21300000, guid: e3ecab10dd6a5b94099f42498604998d, type: 3}
   effectType: 1
   statType: 3
   multiplier: 0.5

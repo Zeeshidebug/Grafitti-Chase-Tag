@@ -96,12 +96,6 @@ public class VaultEvaluator : MonoBehaviour
         {
             candidate.HasClearance = false;
 
-            Debug.Log(
-                $"Vault Clearance Check Failed | " +
-                $"ObstacleTopY: {obstacle.TopPosition.y:F2} | " +
-                $"RequiredCenterY: {GetRequiredCenterHeight(obstacle):F2}"
-            );
-
             candidate.Result =
                 VaultValidationResult.NoClearance;
 
@@ -109,12 +103,6 @@ public class VaultEvaluator : MonoBehaviour
         }
 
         candidate.HasClearance = true;
-
-        Debug.Log(
-            $"Vault Clearance Check Passed | " +
-            $"ObstacleTopY: {obstacle.TopPosition.y:F2} | " +
-            $"RequiredCenterY: {GetRequiredCenterHeight(obstacle):F2}"
-        );
 
         // Landing
         if (!FindLandingSurface(

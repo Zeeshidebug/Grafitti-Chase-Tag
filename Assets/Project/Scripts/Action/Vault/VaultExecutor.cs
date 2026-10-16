@@ -10,6 +10,7 @@ public class VaultExecutor : MonoBehaviour
     [SerializeField] private float staminaCostRate = 0.3f;
 
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
 
     private CharacterController characterController;
 
@@ -61,7 +62,11 @@ public class VaultExecutor : MonoBehaviour
         staminaSystem.MaxStamina * staminaCostRate;
 
         if (!staminaSystem.TryConsume(staminaCost))
+        {
+            staminaHUDController.NotifyInsufficientStamina();
             return false;
+        }
+
 
 
         activeCandidate = candidate;

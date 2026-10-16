@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: SpeedUp
   m_EditorClassIdentifier: Assembly-CSharp::BuffNerfEffect
   effectID: SpeedUp
+  iconSprite: {fileID: 21300000, guid: e3ecab10dd6a5b94099f42498604998d, type: 3}
   effectType: 0
   statType: 0
   multiplier: 1.25

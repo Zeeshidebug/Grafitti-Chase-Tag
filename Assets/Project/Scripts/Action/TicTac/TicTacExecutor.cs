@@ -7,6 +7,7 @@ public class TicTacExecutor : MonoBehaviour
     [SerializeField] private CharacterState characterState;
     [SerializeField] private StaminaSystem staminaSystem;
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
 
     [Header("Settings")]
     [SerializeField] private float staminaCostMultiplier = 0.25f;
@@ -62,7 +63,11 @@ public class TicTacExecutor : MonoBehaviour
             staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(staminaCost))
+        {
+            staminaHUDController.NotifyInsufficientStamina();
             return false;
+        }
+
 
         CurrentTicTacDirection =
             candidate.TicTacDirection;

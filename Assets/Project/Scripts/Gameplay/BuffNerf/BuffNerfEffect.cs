@@ -8,6 +8,8 @@ public class BuffNerfEffect : ScriptableObject
 {
     public string effectID;
 
+
+    public Sprite iconSprite;
     public EffectType effectType;
     public StatType statType;
 

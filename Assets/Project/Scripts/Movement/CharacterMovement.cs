@@ -7,6 +7,7 @@ public class CharacterMovement : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
@@ -193,7 +194,11 @@ public class CharacterMovement : MonoBehaviour
                 staminaSystem.MaxStamina * jumpStaminaCostRate;
 
             if (!staminaSystem.TryConsume(staminaCost))
+            {
+                staminaHUDController.NotifyInsufficientStamina();
                 return;
+            }
+
 
             verticalVelocity =
                 Mathf.Sqrt(

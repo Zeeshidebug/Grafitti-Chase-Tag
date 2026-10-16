@@ -8,6 +8,7 @@ public class TaggingController : MonoBehaviour
     [SerializeField] private PlayerMovementIntent movementIntent;
     [SerializeField] private BuffNerfController buffNerfController;
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
 
     [Header("Tagging")]
     [SerializeField] private float staminaCostMultiplier = 0.5f;
@@ -47,7 +48,10 @@ public class TaggingController : MonoBehaviour
             staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(staminaCost))
+        {
+            staminaHUDController.NotifyInsufficientStamina();
             return false;
+        }
 
         cooldownTimer = cooldownDuration;
 

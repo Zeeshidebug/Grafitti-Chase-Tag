@@ -4,6 +4,8 @@ public class BuffNerfToken : MonoBehaviour
 {
     [SerializeField] private BuffNerfEffect effect;
 
+    public StatType StatType => effect.statType;
+
     private void OnTriggerEnter(Collider other)
     {
         RoleController roleController =

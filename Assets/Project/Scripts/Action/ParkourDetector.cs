@@ -66,7 +66,6 @@ public class ParkourDetector : MonoBehaviour
         if (!hitObstacle)
         {
             CurrentObstacle = null;
-            Debug.Log("No obstacle detected.");
             return;
         }
 
@@ -116,8 +115,9 @@ public class ParkourDetector : MonoBehaviour
     )
     {
         Vector3 topOrigin =
-            obstacle.HitPoint +
-            Vector3.up * maxObstacleHeight;
+            obstacle.HitPoint
+            - obstacle.SurfaceNormal * 0.15f
+            + Vector3.up * maxObstacleHeight;
 
         if (!Physics.Raycast(
             topOrigin,

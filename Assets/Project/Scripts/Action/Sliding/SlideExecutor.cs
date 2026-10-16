@@ -5,6 +5,7 @@ public class SlideExecutor : MonoBehaviour
     [SerializeField]
     private CharacterState characterState;
     [SerializeField] private Animator animator;
+    [SerializeField] private StaminaHUDController staminaHUDController;
 
     [SerializeField]
     private float slideHeightRatio = 0.5f;
@@ -106,7 +107,11 @@ public class SlideExecutor : MonoBehaviour
         staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(slideCost))
+        {
+            staminaHUDController.NotifyInsufficientStamina();
             return false;
+        }
+
 
         slideDirection = direction;
 
