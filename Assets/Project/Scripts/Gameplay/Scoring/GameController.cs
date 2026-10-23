@@ -61,10 +61,8 @@ public class GameController : MonoBehaviour
         roundController.StartRound();
     }
 
-    /// <summary>
     /// Memproses skor dan mengecek apakah match sudah berakhir.
     /// Tidak memulai ronde berikutnya.
-    /// </summary>
     public bool ProcessRoundResult(RoundWinner winner)
     {
         if (gameStatus != GameStatus.Playing)
@@ -91,10 +89,8 @@ public class GameController : MonoBehaviour
         return false;
     }
 
-    /// <summary>
     /// Menentukan siapa yang mendapatkan poin,
     /// berdasarkan role sebelum rotasi.
-    /// </summary>
     public string GetRoundWinnerMessage(RoundWinner winner)
     {
         if (IsRoleWinner(winner, playerRoleController.CurrentRole))
@@ -106,9 +102,7 @@ public class GameController : MonoBehaviour
         return "ROUND ENDED";
     }
 
-    /// <summary>
     /// Dipanggil setelah animasi START! selesai.
-    /// </summary>
     public void OnRoundFinished()
     {
         if (gameStatus != GameStatus.Playing)
@@ -174,8 +168,6 @@ public class GameController : MonoBehaviour
             $"MATCH FINISHED! " +
             $"Player: {PlayerScore} - AI: {AIScore}"
         );
-
-        // TODO: Hubungkan ke Endscreen nanti.
     }
 
     private void AssignInitialRoles()

@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerInputHandler))]
-public class PlayerMovementIntent : MonoBehaviour
+public class PlayerMovementIntent : MonoBehaviour, ICharacterMovementIntent
 {
     [Header("References")]
     [SerializeField] private Transform cameraTransform;

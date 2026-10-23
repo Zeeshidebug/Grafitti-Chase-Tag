@@ -2,7 +2,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(CharacterState))]
-[RequireComponent(typeof(PlayerInputHandler))]
 public class CharacterMovement : MonoBehaviour
 {
     [Header("References")]
@@ -29,8 +28,7 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float releaseMomentumDecay = 5f;
 
     private CharacterController characterController;
-    private PlayerMovementIntent movementIntent;
-    private PlayerInputHandler inputHandler;
+    private ICharacterMovementIntent movementIntent;
     private CharacterState characterState;
     private StaminaSystem staminaSystem;
     private SlideExecutor slideExecutor;
@@ -49,13 +47,11 @@ public class CharacterMovement : MonoBehaviour
     private Vector3 releaseMomentum;
     private bool jumpAnimationActive;
     private bool hasLeftGround;
-    // private float StrafeAmount;
 
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
-        movementIntent = GetComponent<PlayerMovementIntent>();
-        inputHandler = GetComponent<PlayerInputHandler>();
+        movementIntent = GetComponent<ICharacterMovementIntent>();
         currentSpeed = moveSpeed;
         characterState = GetComponent<CharacterState>();
         staminaSystem = GetComponent<StaminaSystem>();
@@ -64,6 +60,18 @@ public class CharacterMovement : MonoBehaviour
         wallReboundExecutor = GetComponent<WallReboundExecutor>();
         ticTacExecutor = GetComponent<TicTacExecutor>();
         buffNerfController = GetComponent<BuffNerfController>();
+
+        if (movementIntent == null)
+        {
+            Debug.LogError(
+                "CharacterMovement requires a component " +
+                "implementing ICharacterMovementIntent.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
     }
 
     private void Update()
@@ -187,7 +195,7 @@ public class CharacterMovement : MonoBehaviour
             verticalVelocity = -2f;
         }
 
-        if (inputHandler.JumpPressed &&
+        if (movementIntent.JumpPressed &&
             characterState.CurrentState == LocomotionState.Grounded)
         {
             float staminaCost =

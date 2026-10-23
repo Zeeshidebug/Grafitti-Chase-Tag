@@ -25,7 +25,7 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private RoleController playerRole;
     [SerializeField] private ScoreController scoreController;
 
-    private bool showDebug = true;
+    private bool showDebug = false;
 
     private enum DebugPage
     {

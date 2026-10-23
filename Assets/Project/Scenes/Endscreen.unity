@@ -315,8 +315,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Game Finished!
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 4b86816a371c4ed45a822e27368cc909, type: 2}
-  m_sharedMaterial: {fileID: 7520406092465004973, guid: 4b86816a371c4ed45a822e27368cc909, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 604a6cf25e4d83e4d8a63cc5932295a8, type: 2}
+  m_sharedMaterial: {fileID: 9088019143649320158, guid: 604a6cf25e4d83e4d8a63cc5932295a8, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
