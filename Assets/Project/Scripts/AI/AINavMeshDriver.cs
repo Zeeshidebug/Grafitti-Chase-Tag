@@ -13,13 +13,14 @@ public class AINavMeshDriver : MonoBehaviour
     [SerializeField] private float repathInterval = 0.2f;
 
     [Header("Movement")]
-    [SerializeField] private bool sprint;
+    private bool sprintRequested;
 
     private NavMeshAgent agent;
     private float repathTimer;
     private Vector3 lastDestination;
     private bool hasDestination;
     private Vector3 destination;
+    public bool SprintRequested => sprintRequested;
 
     private void Awake()
     {
@@ -109,7 +110,7 @@ public class AINavMeshDriver : MonoBehaviour
         movementIntent.SetMovementIntent(
             direction,
             direction,
-            sprint
+            sprintRequested
         );
     }
 
@@ -122,6 +123,7 @@ public class AINavMeshDriver : MonoBehaviour
     public void ClearDestination()
     {
         hasDestination = false;
+        sprintRequested = false;
 
         if (agent != null && agent.isOnNavMesh)
             agent.ResetPath();
@@ -134,5 +136,11 @@ public class AINavMeshDriver : MonoBehaviour
     {
         if (movementIntent != null)
             movementIntent.StopMovement();
+        sprintRequested = false;
+    }
+
+    public void SetSprintIntent(bool shouldSprint)
+    {
+        sprintRequested = shouldSprint;
     }
 }

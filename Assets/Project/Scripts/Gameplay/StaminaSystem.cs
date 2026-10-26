@@ -22,11 +22,6 @@ public class StaminaSystem : MonoBehaviour
         buffNerfController = GetComponent<BuffNerfController>();
     }
 
-    private void Update()
-    {
-
-    }
-
     public bool CanAfford(float amount)
     {
         return currentStamina >= amount;
@@ -100,5 +95,13 @@ public class StaminaSystem : MonoBehaviour
             deltaTime;
 
         Restore(regenerationAmount);
+
+        // Debug.Log(
+        //     $"Regen/sec: " +
+        //     $"{MaxStamina * regenerationRate * regenerationMultiplier:F2} | " +
+        //     $"Multiplier: {regenerationMultiplier:F2} | " +
+        //     $"DeltaTime: {deltaTime:F4} | " +
+        //     $"RegenThisCall: {regenerationAmount:F4}"
+        // );
     }
 }

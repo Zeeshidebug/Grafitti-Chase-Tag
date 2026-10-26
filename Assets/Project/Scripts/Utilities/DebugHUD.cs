@@ -25,12 +25,14 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private RoleController playerRole;
     [SerializeField] private ScoreController scoreController;
     [SerializeField] private UtilityAIController aiController;
+    [SerializeField] private StaminaUtilityEvaluator staminaEvaluator;
+    [SerializeField] private AINavMeshDriver navMeshDriver;
     [SerializeField] private bool showUtilityGraphs = true;
     [SerializeField] private float graphWidth = 260f;
     [SerializeField] private float graphHeight = 110f;
     [SerializeField] private float graphMargin = 20f;
 
-    private bool showDebug = false;
+    private bool showDebug = true;
 
     private enum DebugPage
     {
@@ -42,7 +44,7 @@ public class DebugHUD : MonoBehaviour
         AI
     }
 
-    private DebugPage currentPage = DebugPage.Player;
+    private DebugPage currentPage = DebugPage.AI;
 
     private void Awake()
     {
@@ -476,6 +478,8 @@ public class DebugHUD : MonoBehaviour
         }
 
         GUILayout.Label($"Role: {aiController.DebugRole}");
+        GUILayout.Label($"Sprinting: {navMeshDriver.SprintRequested}");
+        GUILayout.Label($"Stamina Ratio: {staminaEvaluator.SprintUtility:F2}");
         GUILayout.Label($"Player Distance: {aiController.DebugPlayerDistance:F2}");
 
         GUILayout.Space(5f);
@@ -505,34 +509,6 @@ public class DebugHUD : MonoBehaviour
 
         GUILayout.Label($"Decision: {aiController.DebugSelectedDecision}");
         GUILayout.Label($"Destination: {aiController.DebugDestination}");
-
-        // GUILayout.EndVertical();
-
-        // GUILayout.Space(10f);
-
-        // // RIGHT COLUMN: Utility graphs
-        // GUILayout.BeginVertical(GUILayout.Width(340f));
-
-        // GUILayout.Label("DISTANCE UTILITY CURVES");
-        // GUILayout.Label("------------------------------");
-
-        // DrawUtilityCurveGraph(
-        //     "Chaser Distance Utility",
-        //     aiController.DebugChaserDistanceCurve,
-        //     320f,
-        //     150f
-        // );
-
-        // DrawUtilityCurveGraph(
-        //     "Evader Distance Utility",
-        //     aiController.DebugEvaderDistanceCurve,
-        //     320f,
-        //     150f
-        // );
-
-        // GUILayout.EndVertical();
-
-        // GUILayout.EndHorizontal();
     }
 
 
@@ -733,6 +709,13 @@ public class DebugHUD : MonoBehaviour
         DrawUtilityCurveGraph(
             "Evader Utility",
             aiController.DebugEvaderDistanceCurve,
+            width,
+            height
+        );
+
+        DrawUtilityCurveGraph(
+            "Sprint Utility",
+            staminaEvaluator.SprintUtilityCurve,
             width,
             height
         );

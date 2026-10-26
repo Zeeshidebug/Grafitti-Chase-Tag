@@ -56,6 +56,17 @@ public class UtilityAIController : MonoBehaviour
     [SerializeField, Min(0.1f)]
     private float destinationArrivalDistance = 1.5f;
 
+    [Header("Stamina Awareness")]
+    [SerializeField] private StaminaUtilityEvaluator staminaEvaluator;
+
+    [SerializeField, Range(0f, 1f)]
+    private float sprintStartRatio = 0.55f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float sprintStopRatio = 0.35f;
+
+    private bool isSprintRequested;
+
     [Header("Debug")]
     [SerializeField] private bool logDecisions = true;
     [SerializeField] private bool logEvadeCandidates;
@@ -116,6 +127,9 @@ public class UtilityAIController : MonoBehaviour
 
         if (navMeshDriver == null)
             navMeshDriver = GetComponent<AINavMeshDriver>();
+
+        if (staminaEvaluator == null)
+            staminaEvaluator = GetComponent<StaminaUtilityEvaluator>();
     }
 
     private void Start()
@@ -145,6 +159,7 @@ public class UtilityAIController : MonoBehaviour
             DebugSelectedDecision = "Off NavMesh";
             return;
         }
+        UpdateSprintDecision();
 
         decisionTimer -= Time.deltaTime;
         commitmentTimer = Mathf.Max(
@@ -425,16 +440,6 @@ public class UtilityAIController : MonoBehaviour
 
         if (logDecisions)
         {
-            // Debug.Log(
-            //     $"AI Evader | Candidates: {candidates.Count} | " +
-            //     $"Eligible: {eligibleCandidates.Count} | " +
-            //     $"Best Score: {bestScore:F2} | " +
-            //     $"Selected Score: {selectedCandidate.Score:F2} | " +
-            //     $"Selected Distance: {selectedCandidate.DistanceFromPlayer:F2} | " +
-            //     $"Destination: {selectedCandidate.Position}",
-            //     this
-            // );
-
             DebugPlayerDistance = Vector3.Distance(
                 transform.position,
                 player.position
@@ -544,5 +549,68 @@ public class UtilityAIController : MonoBehaviour
         commitmentTimer = 0f;
         navMeshDriver.ClearDestination();
     }
+
+
+    private void UpdateSprintDecision()
+    {
+        if (staminaEvaluator == null ||
+            navMeshDriver == null ||
+            roleController == null ||
+            player == null)
+        {
+            isSprintRequested = false;
+
+            if (navMeshDriver != null)
+                navMeshDriver.SetSprintIntent(false);
+
+            return;
+        }
+
+        staminaEvaluator.Evaluate();
+
+        float playerDistance = Vector3.Distance(
+            transform.position,
+            player.position
+        );
+
+        bool roleWantsSprint = false;
+
+        float chaserSprintDistance = 10f;
+        float evaderSprintThreatDistance = 5f;
+
+        switch (roleController.CurrentRole)
+        {
+            case CharacterRole.Chaser:
+                roleWantsSprint =
+                    playerDistance > chaserSprintDistance;
+                break;
+
+            case CharacterRole.Evader:
+                roleWantsSprint =
+                    playerDistance < evaderSprintThreatDistance;
+                break;
+        }
+
+        // Hard constraints always override hysteresis.
+        if (!roleWantsSprint || !staminaEvaluator.CanSprint)
+        {
+            isSprintRequested = false;
+        }
+        else if (isSprintRequested)
+        {
+            // Keep sprinting until stamina reaches the stop threshold.
+            if (staminaEvaluator.StaminaRatio <= sprintStopRatio)
+                isSprintRequested = false;
+        }
+        else
+        {
+            // Only start sprinting when stamina reaches the start threshold.
+            if (staminaEvaluator.StaminaRatio >= sprintStartRatio)
+                isSprintRequested = true;
+        }
+
+        navMeshDriver.SetSprintIntent(isSprintRequested);
+    }
+
 
 }
