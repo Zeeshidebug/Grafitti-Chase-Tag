@@ -24,6 +24,11 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private RoleController aiRole;
     [SerializeField] private RoleController playerRole;
     [SerializeField] private ScoreController scoreController;
+    [SerializeField] private UtilityAIController aiController;
+    [SerializeField] private bool showUtilityGraphs = true;
+    [SerializeField] private float graphWidth = 260f;
+    [SerializeField] private float graphHeight = 110f;
+    [SerializeField] private float graphMargin = 20f;
 
     private bool showDebug = false;
 
@@ -33,7 +38,8 @@ public class DebugHUD : MonoBehaviour
         Obstacle,
         Parkour,
         BuffNerf,
-        Round
+        Round,
+        AI
     }
 
     private DebugPage currentPage = DebugPage.Player;
@@ -104,7 +110,7 @@ public class DebugHUD : MonoBehaviour
         }
 
         GUILayout.BeginArea(
-            new Rect(20f, 20f, 350f, 1000f)
+            new Rect(20f, 20f, 900f, 1000f)
         );
 
         GUILayout.Label(
@@ -136,9 +142,16 @@ public class DebugHUD : MonoBehaviour
             case DebugPage.Round:
                 DrawRoundPage();
                 break;
+
+            case DebugPage.AI:
+                DrawAIPage();
+                break;
         }
 
         GUILayout.EndArea();
+
+        if (currentPage == DebugPage.AI)
+            DrawUtilityGraphsOverlay();
     }
 
     private void DrawPlayerPage()
@@ -445,4 +458,286 @@ public class DebugHUD : MonoBehaviour
             );
         }
     }
+
+    private void DrawAIPage()
+    {
+        // GUILayout.BeginHorizontal();
+
+        // LEFT COLUMN: AI information
+        // GUILayout.BeginVertical(GUILayout.Width(340f));
+
+        GUILayout.Label("AI DECISION");
+        GUILayout.Label("------------------------------");
+
+        if (aiController == null)
+        {
+            GUILayout.Label("AI Controller: Not Assigned");
+            return;
+        }
+
+        GUILayout.Label($"Role: {aiController.DebugRole}");
+        GUILayout.Label($"Player Distance: {aiController.DebugPlayerDistance:F2}");
+
+        GUILayout.Space(5f);
+        GUILayout.Label("UTILITY SCORES");
+        GUILayout.Label("------------------------------");
+
+        GUILayout.Label($"Chase Score: {aiController.DebugChaseScore:F2}");
+        GUILayout.Label($"Best Evade Score: {aiController.DebugBestEvadeScore:F2}");
+        GUILayout.Label($"Selected Score: {aiController.DebugSelectedScore:F2}");
+        GUILayout.Label($"Selected Distance: {aiController.DebugSelectedDistance:F2}");
+
+        GUILayout.Space(5f);
+        GUILayout.Label("CANDIDATES");
+        GUILayout.Label("------------------------------");
+
+        GUILayout.Label($"Valid: {aiController.DebugCandidateCount}");
+        GUILayout.Label($"Eligible: {aiController.DebugEligibleCount}");
+
+        foreach (string candidate in aiController.DebugCandidateLines)
+        {
+            GUILayout.Label(candidate);
+        }
+
+        GUILayout.Space(5f);
+        GUILayout.Label("SELECTED DECISION");
+        GUILayout.Label("------------------------------");
+
+        GUILayout.Label($"Decision: {aiController.DebugSelectedDecision}");
+        GUILayout.Label($"Destination: {aiController.DebugDestination}");
+
+        // GUILayout.EndVertical();
+
+        // GUILayout.Space(10f);
+
+        // // RIGHT COLUMN: Utility graphs
+        // GUILayout.BeginVertical(GUILayout.Width(340f));
+
+        // GUILayout.Label("DISTANCE UTILITY CURVES");
+        // GUILayout.Label("------------------------------");
+
+        // DrawUtilityCurveGraph(
+        //     "Chaser Distance Utility",
+        //     aiController.DebugChaserDistanceCurve,
+        //     320f,
+        //     150f
+        // );
+
+        // DrawUtilityCurveGraph(
+        //     "Evader Distance Utility",
+        //     aiController.DebugEvaderDistanceCurve,
+        //     320f,
+        //     150f
+        // );
+
+        // GUILayout.EndVertical();
+
+        // GUILayout.EndHorizontal();
+    }
+
+
+    private void DrawUtilityCurveGraph(
+        string title,
+        AnimationCurve curve,
+        float graphWidth = 280f,
+        float graphHeight = 110f)
+    {
+        GUILayout.Space(5f);
+        GUILayout.Label(title);
+
+        if (curve == null)
+        {
+            GUILayout.Label("Curve not assigned.");
+            return;
+        }
+
+        Rect graphRect = GUILayoutUtility.GetRect(
+            graphWidth,
+            graphHeight
+        );
+
+        // Reserve space for axis labels.
+        graphRect.x += 24f;
+        graphRect.width -= 32f;
+        graphRect.y += 6f;
+        graphRect.height -= 22f;
+
+        Color previousColor = GUI.color;
+
+        // Graph background.
+        GUI.color = new Color(0.12f, 0.12f, 0.12f, 1f);
+        GUI.DrawTexture(graphRect, Texture2D.whiteTexture);
+
+        // Grid.
+        GUI.color = new Color(0.4f, 0.4f, 0.4f, 0.5f);
+
+        for (int i = 0; i <= 4; i++)
+        {
+            float x = graphRect.x + graphRect.width * i / 4f;
+            float y = graphRect.y + graphRect.height * i / 4f;
+
+            DrawGraphLine(
+                new Vector2(x, graphRect.y),
+                new Vector2(x, graphRect.y + graphRect.height),
+                GUI.color,
+                1f
+            );
+
+            DrawGraphLine(
+                new Vector2(graphRect.x, y),
+                new Vector2(graphRect.x + graphRect.width, y),
+                GUI.color,
+                1f
+            );
+        }
+
+        // Draw the AnimationCurve.
+        GUI.color = Color.green;
+
+        const int segments = 60;
+
+        Vector2 previousPoint = GetCurvePoint(
+            curve, graphRect, 0f
+        );
+
+        for (int i = 1; i <= segments; i++)
+        {
+            float t = i / (float)segments;
+
+            Vector2 currentPoint = GetCurvePoint(
+                curve, graphRect, t
+            );
+
+            DrawGraphLine(
+                previousPoint,
+                currentPoint,
+                GUI.color,
+                2f
+            );
+
+            previousPoint = currentPoint;
+        }
+
+        GUI.color = previousColor;
+
+        // Axis labels.
+        GUI.Label(
+            new Rect(graphRect.x - 27f, graphRect.y - 7f, 25f, 18f),
+            "1.0"
+        );
+
+        GUI.Label(
+            new Rect(graphRect.x - 27f,
+                graphRect.y + graphRect.height / 2f - 7f,
+                25f, 18f),
+            "0.5"
+        );
+
+        GUI.Label(
+            new Rect(graphRect.x - 20f,
+                graphRect.y + graphRect.height - 8f,
+                20f, 18f),
+            "0"
+        );
+
+        GUI.Label(
+            new Rect(graphRect.x - 2f,
+                graphRect.y + graphRect.height + 2f,
+                45f, 18f),
+            "Near"
+        );
+
+        GUI.Label(
+            new Rect(graphRect.x + graphRect.width - 38f,
+                graphRect.y + graphRect.height + 2f,
+                45f, 18f),
+            "Far"
+        );
+    }
+
+    private Vector2 GetCurvePoint(
+        AnimationCurve curve,
+        Rect graphRect,
+        float normalizedDistance)
+    {
+        float score = Mathf.Clamp01(
+            curve.Evaluate(normalizedDistance)
+        );
+
+        return new Vector2(
+            graphRect.x + normalizedDistance * graphRect.width,
+            graphRect.y + (1f - score) * graphRect.height
+        );
+    }
+
+    private void DrawGraphLine(
+        Vector2 start,
+        Vector2 end,
+        Color color,
+        float thickness)
+    {
+        Vector2 difference = end - start;
+        float length = difference.magnitude;
+
+        if (length <= 0.001f)
+            return;
+
+        Matrix4x4 previousMatrix = GUI.matrix;
+        Color previousColor = GUI.color;
+
+        float angle = Mathf.Atan2(
+            difference.y,
+            difference.x
+        ) * Mathf.Rad2Deg;
+
+        GUI.color = color;
+
+        GUIUtility.RotateAroundPivot(angle, start);
+
+        GUI.DrawTexture(
+            new Rect(
+                start.x,
+                start.y - thickness * 0.5f,
+                length,
+                thickness
+            ),
+            Texture2D.whiteTexture
+        );
+
+        GUI.matrix = previousMatrix;
+        GUI.color = previousColor;
+    }
+
+    private void DrawUtilityGraphsOverlay()
+    {
+        if (!showUtilityGraphs || aiController == null)
+            return;
+
+        float width = Mathf.Min(graphWidth, Screen.width - 40f);
+        float height = graphHeight;
+
+        float x = Screen.width - width - graphMargin;
+        float firstY = Screen.height - (height * 2f) - 75f;
+
+        GUILayout.BeginArea(
+            new Rect(x, firstY, width + 10f, height * 2f + 70f)
+        );
+
+        DrawUtilityCurveGraph(
+            "Chaser Utility",
+            aiController.DebugChaserDistanceCurve,
+            width,
+            height
+        );
+
+        DrawUtilityCurveGraph(
+            "Evader Utility",
+            aiController.DebugEvaderDistanceCurve,
+            width,
+            height
+        );
+
+        GUILayout.EndArea();
+    }
+
 }

@@ -13,6 +13,11 @@ public class GameController : MonoBehaviour
     [SerializeField] private int maxRounds = 5;
     [SerializeField] private int roundsToWin = 3;
 
+    [Header("Debug")]
+    [SerializeField] private bool manualRoleAssignment = false;
+    [SerializeField] private CharacterRole manualPlayerRole = CharacterRole.Chaser;
+    [SerializeField] private CharacterRole manualAIRole = CharacterRole.Evader;
+
     private int currentRound;
     private GameStatus gameStatus = GameStatus.NotStarted;
 
@@ -172,6 +177,14 @@ public class GameController : MonoBehaviour
 
     private void AssignInitialRoles()
     {
+        if (manualRoleAssignment)
+        {
+            playerRoleController.SetRole(manualPlayerRole);
+            aiRoleController.SetRole(manualAIRole);
+
+            return;
+        }
+
         CharacterRole playerRole =
             Random.value < 0.5f
                 ? CharacterRole.Chaser

@@ -33,10 +33,10 @@ public class AINavMeshDriver : MonoBehaviour
 
     private void Start()
     {
-        if (movementIntent == null || destination == null)
+        if (movementIntent == null)
         {
             Debug.LogError(
-                "AINavMeshDriver requires Movement Intent and Destination.",
+                "AINavMeshDriver requires Movement Intent",
                 this
             );
 
