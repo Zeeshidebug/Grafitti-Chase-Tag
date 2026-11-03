@@ -76,6 +76,11 @@ public class CharacterMovement : MonoBehaviour
 
     private void Update()
     {
+        if (characterState.CurrentState == LocomotionState.Vaulting)
+        {
+            return;
+        }
+
         UpdateLocomotionState();
 
         HandleMovement();

@@ -7,23 +7,40 @@ public class AINavMeshDriver : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private AIMovementIntent movementIntent;
+    [SerializeField] private ParkourDetector parkourDetector;
+    [SerializeField] private CharacterState characterState;
+    [SerializeField] private CharacterController characterController;
 
     [Header("Navigation")]
     [SerializeField] private float stoppingDistance = 1.5f;
     [SerializeField] private float repathInterval = 0.2f;
+
+    [Header("Agent Proxy")]
+    [SerializeField] private LayerMask agentProxyObstacleLayer;
+    [SerializeField, Min(0.1f)] private float agentProxySampleRadius = 1.5f;
+    [SerializeField, Min(0f)] private float agentProxyGroundCheckDistance = 0.25f;
 
     [Header("Movement")]
     private bool sprintRequested;
 
     private NavMeshAgent agent;
     private float repathTimer;
-    private Vector3 lastDestination;
     private bool hasDestination;
     private Vector3 destination;
     public bool SprintRequested => sprintRequested;
+    public bool IsOnParkourSurface { get; private set; }
 
     private void Awake()
     {
+        if (parkourDetector == null)
+            parkourDetector = GetComponent<ParkourDetector>();
+
+        if (characterState == null)
+            characterState = GetComponent<CharacterState>();
+
+        if (characterController == null)
+            characterController = GetComponent<CharacterController>();
+
         agent = GetComponent<NavMeshAgent>();
 
         // NavMesh computes paths; CharacterMovement moves the character.
@@ -58,19 +75,33 @@ public class AINavMeshDriver : MonoBehaviour
 
     private void Update()
     {
-        if (!agent.isOnNavMesh)
+        // The vault executor owns physical movement while traversing an obstacle.
+        // Keep the NavMesh simulation at its takeoff position until landing.
+        if (characterState != null &&
+            characterState.CurrentState == LocomotionState.Vaulting)
         {
-            movementIntent.StopMovement();
             return;
         }
 
-        // Keep the navigation simulation synchronized with the
-        // position moved by CharacterMovement.
-        agent.nextPosition = transform.position;
+        if (!SyncAgentProxyPosition())
+        {
+            if (!IsOnParkourSurface)
+                StopNavigationIntent();
+            return;
+        }
+
+        if (IsOnParkourSurface)
+            return;
+
+        if (!agent.isOnNavMesh)
+        {
+            StopNavigationIntent();
+            return;
+        }
 
         if (!hasDestination)
         {
-            movementIntent.StopMovement();
+            StopNavigationIntent();
             return;
         }
 
@@ -86,13 +117,13 @@ public class AINavMeshDriver : MonoBehaviour
             !agent.hasPath ||
             agent.pathStatus != NavMeshPathStatus.PathComplete)
         {
-            movementIntent.StopMovement();
+            StopNavigationIntent();
             return;
         }
 
         if (agent.remainingDistance <= stoppingDistance)
         {
-            movementIntent.StopMovement();
+            StopNavigationIntent();
             return;
         }
 
@@ -101,7 +132,7 @@ public class AINavMeshDriver : MonoBehaviour
 
         if (direction.sqrMagnitude < 0.001f)
         {
-            movementIntent.StopMovement();
+            StopNavigationIntent();
             return;
         }
 
@@ -112,6 +143,11 @@ public class AINavMeshDriver : MonoBehaviour
             direction,
             sprintRequested
         );
+
+        if (parkourDetector != null)
+        {
+            parkourDetector.SetObstacleDetectionDirection(direction);
+        }
     }
 
     public void SetDestination(Vector3 newDestination)
@@ -129,18 +165,130 @@ public class AINavMeshDriver : MonoBehaviour
             agent.ResetPath();
 
         if (movementIntent != null)
-            movementIntent.StopMovement();
+            StopNavigationIntent();
     }
 
     private void OnDisable()
     {
         if (movementIntent != null)
-            movementIntent.StopMovement();
+            StopNavigationIntent();
         sprintRequested = false;
     }
 
     public void SetSprintIntent(bool shouldSprint)
     {
         sprintRequested = shouldSprint;
+    }
+
+    public void SetParkourMovementIntent(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.001f)
+        {
+            StopNavigationIntent();
+            return;
+        }
+
+        direction.Normalize();
+        movementIntent.SetMovementIntent(direction, direction, sprintRequested);
+        if (parkourDetector != null)
+            parkourDetector.SetObstacleDetectionDirection(direction);
+    }
+
+    public void BeginParkourTraversal()
+    {
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            return;
+
+        agent.isStopped = true;
+        agent.velocity = Vector3.zero;
+    }
+
+    public bool RecoverAfterParkour(float sampleRadius)
+    {
+        if (agent == null || !agent.enabled || !gameObject.activeInHierarchy)
+            return false;
+
+        bool synced = SyncAgentProxyPosition(sampleRadius);
+        agent.ResetPath();
+        repathTimer = 0f;
+
+        if (movementIntent != null)
+            movementIntent.StopMovement();
+
+        if (synced)
+            agent.isStopped = false;
+
+        return synced;
+    }
+
+    private bool SyncAgentProxyPosition(float sampleRadius = -1f)
+    {
+        bool standingOnObstacle = false;
+        if (characterController != null && characterController.isGrounded)
+        {
+            Vector3 rayOrigin = transform.position + Vector3.up * 0.05f;
+            standingOnObstacle = Physics.Raycast(
+                rayOrigin,
+                Vector3.down,
+                out RaycastHit groundHit,
+                agentProxyGroundCheckDistance,
+                agentProxyObstacleLayer,
+                QueryTriggerInteraction.Ignore);
+        }
+
+        IsOnParkourSurface = standingOnObstacle;
+
+        if (agent == null || !agent.enabled || !agent.isOnNavMesh)
+            return false;
+
+        Vector3 sampleOrigin = transform.position;
+        if (standingOnObstacle)
+            sampleOrigin.y = agent.nextPosition.y;
+
+        if (!NavMesh.SamplePosition(
+                sampleOrigin,
+                out NavMeshHit hit,
+                sampleRadius > 0f ? sampleRadius : agentProxySampleRadius,
+                agent.areaMask))
+        {
+            agent.isStopped = true;
+            return false;
+        }
+
+        float proxyRadius = Mathf.Max(0.05f, agent.radius * 0.9f);
+        float proxyHeight = Mathf.Max(proxyRadius * 2f, agent.height * 0.9f);
+        Vector3 capsuleBottom = hit.position + Vector3.up * proxyRadius;
+        Vector3 capsuleTop = hit.position + Vector3.up * (proxyHeight - proxyRadius);
+
+        if (Physics.CheckCapsule(
+                capsuleBottom,
+                capsuleTop,
+                proxyRadius,
+                agentProxyObstacleLayer,
+                QueryTriggerInteraction.Ignore))
+        {
+            agent.isStopped = true;
+            return false;
+        }
+
+        agent.nextPosition = hit.position;
+        if (agent.isStopped && !standingOnObstacle)
+        {
+            agent.ResetPath();
+            agent.isStopped = false;
+            repathTimer = 0f;
+        }
+
+        return true;
+    }
+
+    private void StopNavigationIntent()
+    {
+        if (movementIntent != null)
+            movementIntent.StopMovement();
+
+        if (parkourDetector != null)
+            parkourDetector.ClearObstacleDetectionDirection();
     }
 }

@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -9,6 +10,7 @@ public class UtilityAIController : MonoBehaviour
     [SerializeField] private Transform player;
     [SerializeField] private AINavMeshDriver navMeshDriver;
     [SerializeField] private NavMeshAgent navMeshAgent;
+    [SerializeField] private CharacterState characterState;
 
     [Header("Decision")]
     [SerializeField, Min(0.05f)] private float decisionInterval = 0.5f;
@@ -33,6 +35,13 @@ public class UtilityAIController : MonoBehaviour
     [SerializeField]
     private AnimationCurve evaderDistanceCurve =
         AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
+    [Header("Path Quality Utility")]
+    [SerializeField, Range(0f, 1f)]
+    private float evadeDistanceWeight = 0.7f;
+
+    [SerializeField, Range(0f, 1f)]
+    private float evadePathQualityWeight = 0.3f;
 
     [Header("Hybrid Selection")]
     [SerializeField] private bool useWeightedRandomForEvade = true;
@@ -86,6 +95,8 @@ public class UtilityAIController : MonoBehaviour
     public float DebugBestEvadeScore { get; private set; }
     public float DebugSelectedScore { get; private set; }
     public float DebugSelectedDistance { get; private set; }
+    public float DebugSelectedPathLength { get; private set; }
+    public float DebugSelectedPathQuality { get; private set; }
 
     public int DebugCandidateCount { get; private set; }
     public int DebugEligibleCount { get; private set; }
@@ -93,8 +104,16 @@ public class UtilityAIController : MonoBehaviour
     public string DebugSelectedDecision { get; private set; } = "None";
     public Vector3 DebugDestination { get; private set; }
 
-    public System.Collections.Generic.List<string> DebugCandidateLines
-    { get; } = new System.Collections.Generic.List<string>();
+    public List<string> DebugCandidateLines { get; } = new List<string>();
+
+    // Diagnostics for investigating post-vault NavMesh failures.
+    public int DebugSampleSuccessCount { get; private set; }
+    public int DebugSampleFailureCount { get; private set; }
+    public int DebugPathCompleteCount { get; private set; }
+    public int DebugPathPartialCount { get; private set; }
+    public int DebugPathInvalidCount { get; private set; }
+    public string DebugLastCandidateFailure { get; private set; } = "None";
+    public float DebugAgentTransformDelta { get; private set; }
 
     public AnimationCurve DebugChaserDistanceCurve =>
     chaserDistanceCurve;
@@ -108,15 +127,21 @@ public class UtilityAIController : MonoBehaviour
         public Vector3 Position;
         public float Score;
         public float DistanceFromPlayer;
+        public float PathLength;
+        public float PathQuality;
 
         public EvadeCandidate(
             Vector3 position,
             float score,
-            float distanceFromPlayer)
+            float distanceFromPlayer,
+            float pathLength,
+            float pathQuality)
         {
             Position = position;
             Score = score;
             DistanceFromPlayer = distanceFromPlayer;
+            PathLength = pathLength;
+            PathQuality = pathQuality;
         }
     }
 
@@ -130,6 +155,9 @@ public class UtilityAIController : MonoBehaviour
 
         if (staminaEvaluator == null)
             staminaEvaluator = GetComponent<StaminaUtilityEvaluator>();
+
+        if (characterState == null)
+            characterState = GetComponent<CharacterState>();
     }
 
     private void Start()
@@ -153,13 +181,34 @@ public class UtilityAIController : MonoBehaviour
 
     private void Update()
     {
+        if (characterState != null &&
+            characterState.CurrentState != LocomotionState.Grounded)
+        {
+            return;
+        }
+
+        UpdateSprintDecision();
+
+        if (navMeshDriver.IsOnParkourSurface)
+        {
+            Vector3 parkourDirection = roleController.CurrentRole switch
+            {
+                CharacterRole.Chaser => player.position - transform.position,
+                CharacterRole.Evader => transform.position - player.position,
+                _ => Vector3.zero
+            };
+
+            navMeshDriver.SetParkourMovementIntent(parkourDirection);
+            DebugSelectedDecision = $"{roleController.CurrentRole} (Parkour Movement)";
+            return;
+        }
+
         if (!navMeshAgent.isOnNavMesh)
         {
             ClearCurrentDestination();
             DebugSelectedDecision = "Off NavMesh";
             return;
         }
-        UpdateSprintDecision();
 
         decisionTimer -= Time.deltaTime;
         commitmentTimer = Mathf.Max(
@@ -235,19 +284,9 @@ public class UtilityAIController : MonoBehaviour
 
         navMeshDriver.SetDestination(hit.position);
 
-        if (logDecisions)
-        {
-            // Debug.Log(
-            //     $"AI Chaser | Distance: {playerDistance:F2} | " +
-            //     $"Chase Score: {score:F2} | " +
-            //     $"Destination: {hit.position}",
-            //     this
-            // );
-
-            DebugPlayerDistance = playerDistance;
-            DebugChaseScore = score;
-            DebugDestination = hit.position;
-        }
+        DebugPlayerDistance = playerDistance;
+        DebugChaseScore = score;
+        DebugDestination = hit.position;
     }
 
 
@@ -255,6 +294,15 @@ public class UtilityAIController : MonoBehaviour
     {
         DebugSelectedDecision = "Evade";
         DebugCandidateLines.Clear();
+
+        // Reset diagnostics every time we run a fresh evade search.
+        DebugSampleSuccessCount = 0;
+        DebugSampleFailureCount = 0;
+        DebugPathCompleteCount = 0;
+        DebugPathPartialCount = 0;
+        DebugPathInvalidCount = 0;
+        DebugLastCandidateFailure = "None";
+        DebugAgentTransformDelta = Vector3.Distance(transform.position, navMeshAgent.nextPosition);
 
         Vector3 awayFromPlayer = transform.position - player.position;
         awayFromPlayer.y = 0f;
@@ -264,7 +312,7 @@ public class UtilityAIController : MonoBehaviour
 
         awayFromPlayer.Normalize();
 
-        var candidates = new System.Collections.Generic.List<EvadeCandidate>();
+        var candidates = new List<EvadeCandidate>();
 
         int count = Mathf.Max(4, evadeCandidateCount);
 
@@ -284,31 +332,74 @@ public class UtilityAIController : MonoBehaviour
                     destinationSampleRadius,
                     navMeshAgent.areaMask))
             {
+                DebugSampleFailureCount++;
+                DebugLastCandidateFailure = $"SamplePosition failed for candidate {i}; raw={rawPosition}";
+                if (logEvadeCandidates)
+                    DebugCandidateLines.Add($"Candidate {i}: SAMPLE FAILED | raw={rawPosition}");
                 continue;
             }
 
+            DebugSampleSuccessCount++;
             NavMeshPath path = new NavMeshPath();
 
             bool pathFound = navMeshAgent.CalculatePath(hit.position, path);
 
             if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
+            {
+                if (path.status == NavMeshPathStatus.PathPartial)
+                    DebugPathPartialCount++;
+                else
+                    DebugPathInvalidCount++;
+
+                DebugLastCandidateFailure =
+                    $"Path failed for candidate {i}; found={pathFound}, status={path.status}, sampled={hit.position}";
+                if (logEvadeCandidates)
+                    DebugCandidateLines.Add($"Candidate {i}: PATH FAILED | found={pathFound} status={path.status} | sampled={hit.position}");
                 continue;
+            }
 
-            float distanceFromPlayer =
-                Vector3.Distance(hit.position, player.position);
+            DebugPathCompleteCount++;
 
-            float score = EvaluateEvaderDistance(distanceFromPlayer);
+            float distanceFromPlayer = Vector3.Distance(
+                hit.position,
+                player.position
+            );
 
-            candidates.Add(new EvadeCandidate(
+            // Straight-line distance from the AI to this candidate.
+            float straightDistance = Vector3.Distance(
+                transform.position,
+                hit.position
+            );
+
+            float pathLength = CalculatePathLength(path);
+
+            float pathQuality = EvaluatePathQuality(
+                straightDistance,
+                pathLength
+            );
+
+            float score = EvaluateEvadeUtility(
+                distanceFromPlayer,
+                pathQuality
+            );
+
+            EvadeCandidate candidate = new EvadeCandidate(
                 hit.position,
                 score,
-                distanceFromPlayer
-            ));
+                distanceFromPlayer,
+                pathLength,
+                pathQuality
+            );
+
+            candidates.Add(candidate);
 
             if (logEvadeCandidates)
             {
                 DebugCandidateLines.Add(
-                    $"Score: {score:F2} | Distance: {distanceFromPlayer:F2}"
+                    $"Score: {score:F2} | " +
+                    $"Player Dist: {distanceFromPlayer:F2}m | " +
+                    $"Path: {pathLength:F2}m | " +
+                    $"Quality: {pathQuality:F2}"
                 );
             }
         }
@@ -324,8 +415,15 @@ public class UtilityAIController : MonoBehaviour
 
             if (logDecisions)
             {
-                Debug.Log(
-                    "AI Evader | No reachable candidate found.",
+                Debug.LogWarning(
+                    "AI Evader | No reachable candidate found. " +
+                    $"Transform={transform.position}, Agent.nextPosition={navMeshAgent.nextPosition}, " +
+                    $"Agent.isOnNavMesh={navMeshAgent.isOnNavMesh}, Agent.enabled={navMeshAgent.enabled}, " +
+                    $"Agent.updatePosition={navMeshAgent.updatePosition}, Agent.velocity={navMeshAgent.velocity}, " +
+                    $"Transform-Agent delta={DebugAgentTransformDelta:F3}, areaMask={navMeshAgent.areaMask}, " +
+                    $"sample success/fail={DebugSampleSuccessCount}/{DebugSampleFailureCount}, " +
+                    $"path complete/partial/invalid={DebugPathCompleteCount}/{DebugPathPartialCount}/{DebugPathInvalidCount}, " +
+                    $"last failure={DebugLastCandidateFailure}",
                     this
                 );
             }
@@ -344,7 +442,7 @@ public class UtilityAIController : MonoBehaviour
 
         // 2. Evaluate the current destination.
         bool currentDestinationValid =
-            TryGetCurrentEvadeScore(out float currentScore);
+            TryGetCurrentEvadeScore(out float currentScore, out float currentPathLength, out float currentPathQuality);
 
         // 3. Check whether we must switch.
         bool mustSwitch = !currentDestinationValid;
@@ -364,6 +462,8 @@ public class UtilityAIController : MonoBehaviour
                 player.position
             );
             DebugDestination = currentDestination;
+            DebugSelectedPathLength = currentPathLength;
+            DebugSelectedPathQuality = currentPathQuality;
 
             if (logDecisions)
             {
@@ -394,6 +494,8 @@ public class UtilityAIController : MonoBehaviour
                     player.position
                 );
                 DebugDestination = currentDestination;
+                DebugSelectedPathLength = currentPathLength;
+                DebugSelectedPathQuality = currentPathQuality;
 
                 if (logDecisions)
                 {
@@ -412,7 +514,7 @@ public class UtilityAIController : MonoBehaviour
 
         // Keep only candidates close enough to the best score.
         var eligibleCandidates =
-            new System.Collections.Generic.List<EvadeCandidate>();
+            new List<EvadeCandidate>();
 
         foreach (EvadeCandidate candidate in candidates)
         {
@@ -438,23 +540,22 @@ public class UtilityAIController : MonoBehaviour
 
         SetCurrentDestination(selectedCandidate.Position);
 
-        if (logDecisions)
-        {
-            DebugPlayerDistance = Vector3.Distance(
-                transform.position,
-                player.position
-            );
-            DebugCandidateCount = candidates.Count;
-            DebugEligibleCount = eligibleCandidates.Count;
-            DebugBestEvadeScore = bestScore;
-            DebugSelectedScore = selectedCandidate.Score;
-            DebugSelectedDistance = selectedCandidate.DistanceFromPlayer;
-            DebugDestination = selectedCandidate.Position;
-        }
+        DebugPlayerDistance = Vector3.Distance(
+            transform.position,
+            player.position
+        );
+        DebugCandidateCount = candidates.Count;
+        DebugEligibleCount = eligibleCandidates.Count;
+        DebugBestEvadeScore = bestScore;
+        DebugSelectedScore = selectedCandidate.Score;
+        DebugSelectedDistance = selectedCandidate.DistanceFromPlayer;
+        DebugDestination = selectedCandidate.Position;
+        DebugSelectedPathLength = selectedCandidate.PathLength;
+        DebugSelectedPathQuality = selectedCandidate.PathQuality;
     }
 
     private EvadeCandidate SelectWeightedRandom(
-        System.Collections.Generic.List<EvadeCandidate> candidates)
+        List<EvadeCandidate> candidates)
     {
         // Scores are clamped to [0, 1]. The small minimum weight
         // allows eligible zero-score candidates to remain selectable.
@@ -509,9 +610,11 @@ public class UtilityAIController : MonoBehaviour
         navMeshDriver.SetDestination(destination);
     }
 
-    private bool TryGetCurrentEvadeScore(out float score)
+    private bool TryGetCurrentEvadeScore(out float score, out float pathLength, out float pathQuality)
     {
         score = 0f;
+        pathLength = 0f;
+        pathQuality = 0f;
 
         if (!hasCurrentDestination || !navMeshAgent.isOnNavMesh)
             return false;
@@ -534,19 +637,91 @@ public class UtilityAIController : MonoBehaviour
         if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
             return false;
 
+        float straightDistance = Vector3.Distance(
+            transform.position,
+            currentDestination
+        );
+
+        pathLength = CalculatePathLength(path);
+
+        pathQuality = EvaluatePathQuality(
+            straightDistance,
+            pathLength
+        );
+
         float distanceFromPlayer = Vector3.Distance(
             currentDestination,
             player.position
         );
 
-        score = EvaluateEvaderDistance(distanceFromPlayer);
+        score = EvaluateEvadeUtility(
+            distanceFromPlayer,
+            pathQuality
+        );
+
         return true;
+    }
+
+    private float CalculatePathLength(NavMeshPath path)
+    {
+        if (path == null)
+            return 0f;
+
+        Vector3[] corners = path.corners;
+        if (corners.Length < 2)
+            return 0f;
+
+        float totalLength = 0f;
+
+        for (int i = 1; i < corners.Length; i++)
+        {
+            totalLength += Vector3.Distance(
+                corners[i - 1],
+                corners[i]
+            );
+        }
+
+        return totalLength;
+    }
+
+    private float EvaluatePathQuality(
+        float straightDistance,
+        float pathLength)
+    {
+        if (pathLength <= 0f)
+            return 0f;
+
+        float detourRatio =
+            pathLength / Mathf.Max(straightDistance, 0.001f);
+
+        return Mathf.Clamp01(1f / Mathf.Max(1f, detourRatio));
+    }
+
+    private float EvaluateEvadeUtility(
+        float distanceFromPlayer,
+        float pathQuality)
+    {
+        float distanceUtility =
+            EvaluateEvaderDistance(distanceFromPlayer);
+
+        float totalWeight =
+            evadeDistanceWeight + evadePathQualityWeight;
+
+        if (totalWeight <= 0f)
+            return 0f;
+
+        return Mathf.Clamp01(
+            (distanceUtility * evadeDistanceWeight +
+             pathQuality * evadePathQualityWeight) / totalWeight
+        );
     }
 
     private void ClearCurrentDestination()
     {
         hasCurrentDestination = false;
         commitmentTimer = 0f;
+        DebugSelectedPathLength = 0f;
+        DebugSelectedPathQuality = 0f;
         navMeshDriver.ClearDestination();
     }
 
@@ -575,8 +750,8 @@ public class UtilityAIController : MonoBehaviour
 
         bool roleWantsSprint = false;
 
-        float chaserSprintDistance = 10f;
-        float evaderSprintThreatDistance = 5f;
+        float chaserSprintDistance = 5f;
+        float evaderSprintThreatDistance = 15f;
 
         switch (roleController.CurrentRole)
         {

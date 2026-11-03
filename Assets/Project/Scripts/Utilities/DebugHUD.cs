@@ -482,7 +482,7 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label($"Stamina Ratio: {staminaEvaluator.SprintUtility:F2}");
         GUILayout.Label($"Player Distance: {aiController.DebugPlayerDistance:F2}");
 
-        GUILayout.Space(5f);
+        GUILayout.Space(2f);
         GUILayout.Label("UTILITY SCORES");
         GUILayout.Label("------------------------------");
 
@@ -490,8 +490,10 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label($"Best Evade Score: {aiController.DebugBestEvadeScore:F2}");
         GUILayout.Label($"Selected Score: {aiController.DebugSelectedScore:F2}");
         GUILayout.Label($"Selected Distance: {aiController.DebugSelectedDistance:F2}");
+        GUILayout.Label($"Selected Path Length: {aiController.DebugSelectedPathLength:F2}");
+        GUILayout.Label($"Selected Path Quality: {aiController.DebugSelectedPathQuality:F2}");
 
-        GUILayout.Space(5f);
+        GUILayout.Space(2f);
         GUILayout.Label("CANDIDATES");
         GUILayout.Label("------------------------------");
 
@@ -503,7 +505,7 @@ public class DebugHUD : MonoBehaviour
             GUILayout.Label(candidate);
         }
 
-        GUILayout.Space(5f);
+        GUILayout.Space(2f);
         GUILayout.Label("SELECTED DECISION");
         GUILayout.Label("------------------------------");
 
