@@ -45,9 +45,17 @@ public class ParkourCandidateEvaluator : MonoBehaviour
 
         // The AI must finish beyond the obstacle so its NavMesh proxy can
         // reconnect on walkable ground instead of remaining on top of it.
+        ParkourObstacleData obstacle = detector.CurrentObstacle;
+        Vector3 vaultDirection = -obstacle.SurfaceNormal;
+        vaultDirection.y = 0f;
+
+        if (vaultDirection.sqrMagnitude <= 0.001f)
+            vaultDirection = transform.forward;
+
         currentVaultCandidate = vaultEvaluator.Evaluate(
-            detector.CurrentObstacle,
-            landBeyondObstacle: true);
+            obstacle,
+            landBeyondObstacle: true,
+            direction: vaultDirection);
     }
 
     /// <summary>

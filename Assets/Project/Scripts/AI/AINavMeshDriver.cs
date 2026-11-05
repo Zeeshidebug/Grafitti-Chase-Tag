@@ -13,6 +13,7 @@ public class AINavMeshDriver : MonoBehaviour
 
     [Header("Navigation")]
     [SerializeField] private float stoppingDistance = 1.5f;
+    [SerializeField, Min(0f)] private float preciseStoppingDistance = 0.1f;
     [SerializeField] private float repathInterval = 0.2f;
 
     [Header("Agent Proxy")]
@@ -27,6 +28,8 @@ public class AINavMeshDriver : MonoBehaviour
     private float repathTimer;
     private bool hasDestination;
     private Vector3 destination;
+    private bool isVaultAlignmentActive;
+    private Vector3 vaultAlignmentDirection;
     public bool SprintRequested => sprintRequested;
     public bool IsOnParkourSurface { get; private set; }
 
@@ -83,6 +86,19 @@ public class AINavMeshDriver : MonoBehaviour
             return;
         }
 
+        if (isVaultAlignmentActive)
+        {
+            movementIntent.SetMovementIntent(
+                Vector3.zero,
+                vaultAlignmentDirection,
+                sprintRequested);
+
+            if (parkourDetector != null)
+                parkourDetector.SetObstacleDetectionDirection(vaultAlignmentDirection);
+
+            return;
+        }
+
         if (!SyncAgentProxyPosition())
         {
             if (!IsOnParkourSurface)
@@ -121,7 +137,7 @@ public class AINavMeshDriver : MonoBehaviour
             return;
         }
 
-        if (agent.remainingDistance <= stoppingDistance)
+        if (agent.remainingDistance <= agent.stoppingDistance)
         {
             StopNavigationIntent();
             return;
@@ -152,17 +168,70 @@ public class AINavMeshDriver : MonoBehaviour
 
     public void SetDestination(Vector3 newDestination)
     {
+        SetDestination(newDestination, stoppingDistance);
+    }
+
+    public void SetPreciseDestination(Vector3 newDestination)
+    {
+        SetDestination(newDestination, preciseStoppingDistance);
+    }
+
+    public void BeginVaultAlignment(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.001f)
+            return;
+
+        vaultAlignmentDirection = direction.normalized;
+        isVaultAlignmentActive = true;
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+        {
+            agent.isStopped = true;
+            agent.velocity = Vector3.zero;
+        }
+
+        movementIntent.SetMovementIntent(
+            Vector3.zero,
+            vaultAlignmentDirection,
+            sprintRequested);
+
+        if (parkourDetector != null)
+            parkourDetector.SetObstacleDetectionDirection(vaultAlignmentDirection);
+    }
+
+    public void EndVaultAlignment()
+    {
+        isVaultAlignmentActive = false;
+        vaultAlignmentDirection = Vector3.zero;
+        repathTimer = 0f;
+
+        if (agent != null && agent.enabled && agent.isOnNavMesh)
+            agent.isStopped = false;
+    }
+
+    private void SetDestination(Vector3 newDestination, float arrivalDistance)
+    {
         destination = newDestination;
         hasDestination = true;
+
+        if (agent != null)
+            agent.stoppingDistance = Mathf.Max(0f, arrivalDistance);
     }
 
     public void ClearDestination()
     {
+        EndVaultAlignment();
         hasDestination = false;
         sprintRequested = false;
 
-        if (agent != null && agent.isOnNavMesh)
-            agent.ResetPath();
+        if (agent != null)
+        {
+            if (agent.isOnNavMesh)
+                agent.ResetPath();
+
+            agent.stoppingDistance = stoppingDistance;
+        }
 
         if (movementIntent != null)
             StopNavigationIntent();
@@ -170,6 +239,7 @@ public class AINavMeshDriver : MonoBehaviour
 
     private void OnDisable()
     {
+        EndVaultAlignment();
         if (movementIntent != null)
             StopNavigationIntent();
         sprintRequested = false;
@@ -182,6 +252,15 @@ public class AINavMeshDriver : MonoBehaviour
 
     public void SetParkourMovementIntent(Vector3 direction)
     {
+        if (isVaultAlignmentActive)
+        {
+            movementIntent.SetMovementIntent(
+                Vector3.zero,
+                vaultAlignmentDirection,
+                sprintRequested);
+            return;
+        }
+
         direction.y = 0f;
         if (direction.sqrMagnitude <= 0.001f)
         {

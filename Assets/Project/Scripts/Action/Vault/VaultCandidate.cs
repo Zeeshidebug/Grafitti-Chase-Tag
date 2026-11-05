@@ -16,6 +16,7 @@ public class VaultCandidate
     public VaultValidationResult Result { get; set; }
     public bool HasClearance { get; set; }
     public bool HasLandingSpace { get; set; }
+    public Vector3 TravelDirection { get; set; }
 
     // World-space point on the floor found by the landing raycast.
     public Vector3 LandingSurfacePosition { get; set; }

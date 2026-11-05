@@ -41,10 +41,11 @@ public class DebugHUD : MonoBehaviour
         Parkour,
         BuffNerf,
         Round,
-        AI
+        AI,
+        AIToken
     }
 
-    private DebugPage currentPage = DebugPage.AI;
+    private DebugPage currentPage = DebugPage.AIToken;
 
     private void Awake()
     {
@@ -147,6 +148,10 @@ public class DebugHUD : MonoBehaviour
 
             case DebugPage.AI:
                 DrawAIPage();
+                break;
+
+            case DebugPage.AIToken:
+                DrawAITokenPage();
                 break;
         }
 
@@ -512,6 +517,28 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label($"Decision: {aiController.DebugSelectedDecision}");
         GUILayout.Label($"Destination: {aiController.DebugDestination}");
     }
+
+    private void DrawAITokenPage()
+    {
+
+        GUILayout.Space(4f);
+        GUILayout.Label("TOKEN AWARENESS");
+        GUILayout.Label("------------------------------");
+        GUILayout.Label(
+            $"Scanned: {aiController.DebugTokenScannedCount} | " +
+            $"Viable: {aiController.DebugTokenViableCount}");
+        GUILayout.Label(
+            $"Best: {aiController.DebugBestTokenName} " +
+            $"({aiController.DebugBestTokenScore:F2})");
+        GUILayout.Label($"Target: {aiController.DebugCurrentTokenTarget}");
+        GUILayout.Label($"Target lock: {aiController.DebugTokenTargetLock}");
+        GUILayout.Label($"Status: {aiController.DebugTokenStatus}");
+        GUILayout.Label($"Decision: {aiController.DebugTokenDecision}");
+
+        foreach (string candidate in aiController.DebugTokenCandidateLines)
+            GUILayout.Label(candidate);
+    }
+
 
 
     private void DrawUtilityCurveGraph(

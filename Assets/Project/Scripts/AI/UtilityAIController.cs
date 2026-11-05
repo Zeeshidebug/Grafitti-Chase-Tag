@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+[RequireComponent(typeof(AITokenEvaluator))]
 public class UtilityAIController : MonoBehaviour
 {
     [Header("References")]
@@ -11,6 +12,7 @@ public class UtilityAIController : MonoBehaviour
     [SerializeField] private AINavMeshDriver navMeshDriver;
     [SerializeField] private NavMeshAgent navMeshAgent;
     [SerializeField] private CharacterState characterState;
+    [SerializeField] private AITokenEvaluator tokenEvaluator;
 
     [Header("Decision")]
     [SerializeField, Min(0.05f)] private float decisionInterval = 0.5f;
@@ -65,6 +67,18 @@ public class UtilityAIController : MonoBehaviour
     [SerializeField, Min(0.1f)]
     private float destinationArrivalDistance = 1.5f;
 
+    [Header("Token Awareness")]
+    [SerializeField, Range(0f, 1f)]
+    private float minimumTokenUtility = 0.25f;
+
+    [Tooltip("Chase utility raises the score needed to divert for a token.")]
+    [SerializeField, Range(0f, 1f)]
+    private float chaserTokenPriorityMargin = 0.15f;
+
+    [Tooltip("A token target stays locked until the player enters this radius.")]
+    [SerializeField, Min(0f)]
+    private float tokenTargetInterruptDistance = 10f;
+
     [Header("Stamina Awareness")]
     [SerializeField] private StaminaUtilityEvaluator staminaEvaluator;
 
@@ -73,6 +87,12 @@ public class UtilityAIController : MonoBehaviour
 
     [SerializeField, Range(0f, 1f)]
     private float sprintStopRatio = 0.35f;
+
+    [SerializeField, Range(1f, 50f)]
+    private float chaserSprintDistance = 5f;
+
+    [SerializeField, Range(1f, 50f)]
+    private float evaderSprintThreatDistance = 15f;
 
     private bool isSprintRequested;
 
@@ -85,6 +105,8 @@ public class UtilityAIController : MonoBehaviour
     private Vector3 currentDestination;
     private bool hasCurrentDestination;
     private float commitmentTimer;
+    private BuffNerfToken currentTokenTarget;
+    private Vector3 currentTokenDestination;
 
     // Read-only debug data for DebugHUD.
     public string DebugRole =>
@@ -103,6 +125,53 @@ public class UtilityAIController : MonoBehaviour
 
     public string DebugSelectedDecision { get; private set; } = "None";
     public Vector3 DebugDestination { get; private set; }
+
+    public string DebugTokenStatus => tokenEvaluator != null
+        ? tokenEvaluator.DebugStatus
+        : "AITokenEvaluator missing";
+
+    public int DebugTokenScannedCount => tokenEvaluator != null
+        ? tokenEvaluator.DebugScannedTokenCount
+        : 0;
+
+    public int DebugTokenViableCount => tokenEvaluator != null
+        ? tokenEvaluator.DebugViableTokenCount
+        : 0;
+
+    public string DebugBestTokenName => tokenEvaluator != null
+        ? tokenEvaluator.DebugBestTokenName
+        : "None";
+
+    public float DebugBestTokenScore => tokenEvaluator != null
+        ? tokenEvaluator.DebugBestTokenScore
+        : 0f;
+
+    public string DebugTokenDecision { get; private set; } = "Not evaluated";
+
+    public string DebugCurrentTokenTarget => currentTokenTarget != null
+        ? currentTokenTarget.name
+        : "None";
+
+    public string DebugTokenTargetLock
+    {
+        get
+        {
+            if (currentTokenTarget == null)
+                return "None";
+
+            if (player == null)
+                return "Locked (player reference missing)";
+
+            float playerDistance = Vector3.Distance(transform.position, player.position);
+            return playerDistance <= tokenTargetInterruptDistance
+                ? $"Interruptible ({playerDistance:F1}/{tokenTargetInterruptDistance:F1}m)"
+                : $"Locked ({playerDistance:F1}/{tokenTargetInterruptDistance:F1}m)";
+        }
+    }
+
+    public IReadOnlyList<string> DebugTokenCandidateLines => tokenEvaluator != null
+        ? tokenEvaluator.DebugCandidateLines
+        : (IReadOnlyList<string>)System.Array.Empty<string>();
 
     public List<string> DebugCandidateLines { get; } = new List<string>();
 
@@ -158,6 +227,9 @@ public class UtilityAIController : MonoBehaviour
 
         if (characterState == null)
             characterState = GetComponent<CharacterState>();
+
+        if (tokenEvaluator == null)
+            tokenEvaluator = GetComponent<AITokenEvaluator>();
     }
 
     private void Start()
@@ -174,6 +246,14 @@ public class UtilityAIController : MonoBehaviour
 
             enabled = false;
             return;
+        }
+
+        if (tokenEvaluator == null)
+        {
+            DebugTokenDecision = "Evaluator missing";
+            Debug.LogWarning(
+                "UtilityAIController has no AITokenEvaluator; token awareness is disabled.",
+                this);
         }
 
         decisionTimer = 0f;
@@ -215,7 +295,6 @@ public class UtilityAIController : MonoBehaviour
             0f,
             commitmentTimer - Time.deltaTime
         );
-
         bool roleChanged = roleController.CurrentRole != lastRole;
 
         if (!roleChanged && decisionTimer > 0f)
@@ -229,6 +308,9 @@ public class UtilityAIController : MonoBehaviour
 
         lastRole = roleController.CurrentRole;
         decisionTimer = decisionInterval;
+
+        if (TryMaintainCurrentTokenTarget())
+            return;
 
         switch (roleController.CurrentRole)
         {
@@ -282,10 +364,39 @@ public class UtilityAIController : MonoBehaviour
             return;
         }
 
-        navMeshDriver.SetDestination(hit.position);
-
         DebugPlayerDistance = playerDistance;
         DebugChaseScore = score;
+
+        NavMeshPath chasePath = new NavMeshPath();
+        float chasePathLength = Vector3.Distance(
+            transform.position,
+            hit.position);
+
+        if (navMeshAgent.CalculatePath(hit.position, chasePath) &&
+            chasePath.status == NavMeshPathStatus.PathComplete)
+        {
+            chasePathLength = CalculatePathLength(chasePath);
+        }
+
+        float playerDistanceAtDestination = Vector3.Distance(
+            hit.position,
+            player.position);
+
+        if (TryUseTokenDestination(
+                hit.position,
+                chasePathLength,
+                score,
+                playerDistanceAtDestination))
+        {
+            return;
+        }
+
+        navMeshDriver.SetDestination(hit.position);
+        DebugSelectedDecision = "Chase";
+        DebugSelectedScore = score;
+        DebugSelectedDistance = playerDistance;
+        DebugSelectedPathLength = chasePathLength;
+        DebugSelectedPathQuality = 1f;
         DebugDestination = hit.position;
     }
 
@@ -453,6 +564,15 @@ public class UtilityAIController : MonoBehaviour
         // Keep the current choice during its commitment period.
         if (currentDestinationValid && commitmentTimer > 0f)
         {
+            if (TryUseTokenDestination(
+                    currentDestination,
+                    currentPathLength,
+                    currentScore,
+                    Vector3.Distance(currentDestination, player.position)))
+            {
+                return;
+            }
+
             navMeshDriver.SetDestination(currentDestination);
 
             DebugSelectedDecision = "Evade (Committed)";
@@ -485,6 +605,15 @@ public class UtilityAIController : MonoBehaviour
 
             if (scoreAdvantage <= evadeSwitchingMargin)
             {
+                if (TryUseTokenDestination(
+                        currentDestination,
+                        currentPathLength,
+                        currentScore,
+                        Vector3.Distance(currentDestination, player.position)))
+                {
+                    return;
+                }
+
                 navMeshDriver.SetDestination(currentDestination);
 
                 DebugSelectedDecision = "Evade (Hysteresis)";
@@ -536,6 +665,15 @@ public class UtilityAIController : MonoBehaviour
                 if (candidate.Score > selectedCandidate.Score)
                     selectedCandidate = candidate;
             }
+        }
+
+        if (TryUseTokenDestination(
+                selectedCandidate.Position,
+                selectedCandidate.PathLength,
+                selectedCandidate.Score,
+                selectedCandidate.DistanceFromPlayer))
+        {
+            return;
         }
 
         SetCurrentDestination(selectedCandidate.Position);
@@ -608,6 +746,134 @@ public class UtilityAIController : MonoBehaviour
         commitmentTimer = minDestinationCommitment;
 
         navMeshDriver.SetDestination(destination);
+    }
+
+    private bool TryUseTokenDestination(
+        Vector3 tacticalDestination,
+        float tacticalPathLength,
+        float tacticalScore,
+        float tacticalPlayerDistance)
+    {
+        if (tokenEvaluator == null)
+        {
+            DebugTokenDecision = "Evaluator missing";
+            return false;
+        }
+
+        tokenEvaluator.EvaluateCandidates(
+            roleController.CurrentRole,
+            player,
+            navMeshAgent,
+            tacticalDestination,
+            tacticalPathLength,
+            tacticalPlayerDistance);
+
+        IReadOnlyList<AITokenEvaluator.TokenCandidate> candidates =
+            tokenEvaluator.Candidates;
+
+        if (candidates.Count == 0)
+        {
+            ClearTokenTarget();
+            DebugTokenDecision = "No viable candidate";
+            return false;
+        }
+
+        float requiredScore = minimumTokenUtility;
+        if (roleController.CurrentRole == CharacterRole.Chaser)
+        {
+            requiredScore = Mathf.Max(
+                requiredScore,
+                tacticalScore + chaserTokenPriorityMargin);
+        }
+
+        AITokenEvaluator.TokenCandidate selected = candidates[0];
+
+        if (selected.Score < requiredScore)
+        {
+            ClearTokenTarget();
+            DebugTokenDecision =
+                $"Best score {selected.Score:F2} below required {requiredScore:F2}";
+            return false;
+        }
+
+        bool changedTarget = selected.Token != currentTokenTarget;
+        currentTokenTarget = selected.Token;
+        currentTokenDestination = selected.NavMeshPosition;
+
+        navMeshDriver.SetPreciseDestination(selected.NavMeshPosition);
+
+        DebugSelectedDecision =
+            $"{roleController.CurrentRole} (Token: {selected.Token.name})";
+        DebugSelectedScore = selected.Score;
+        DebugSelectedDistance = selected.ApproachPathLength;
+        DebugSelectedPathLength = selected.ApproachPathLength;
+        DebugSelectedPathQuality = 1f;
+        DebugDestination = selected.NavMeshPosition;
+        DebugTokenDecision =
+            $"Pursuing {selected.Token.name} ({selected.Score:F2}/{requiredScore:F2})";
+
+        if (logDecisions && changedTarget)
+        {
+            Debug.Log(
+                $"AI Token | Target={selected.Token.name} | " +
+                $"Score={selected.Score:F2} | Effect={selected.EffectValue:F2} | " +
+                $"Path={selected.ApproachPathLength:F1}m | " +
+                $"Detour={selected.DetourDistance:F1}m | " +
+                $"Required={requiredScore:F2}",
+                this);
+        }
+
+        return true;
+    }
+
+    private bool TryMaintainCurrentTokenTarget()
+    {
+        if (currentTokenTarget == null)
+            return false;
+
+        if (!currentTokenTarget.gameObject.activeInHierarchy)
+        {
+            ClearTokenTarget();
+            return false;
+        }
+
+        float playerDistance = player != null
+            ? Vector3.Distance(transform.position, player.position)
+            : float.PositiveInfinity;
+
+        if (playerDistance <= tokenTargetInterruptDistance)
+        {
+            DebugTokenDecision =
+                $"Token pursuit interrupted: player within {playerDistance:F1}m";
+            ClearTokenTarget();
+            return false;
+        }
+
+        NavMeshPath path = new NavMeshPath();
+        bool pathFound = navMeshAgent.CalculatePath(
+            currentTokenDestination,
+            path);
+
+        if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
+        {
+            DebugTokenDecision = "Token pursuit released: path is no longer complete";
+            ClearTokenTarget();
+            return false;
+        }
+
+        navMeshDriver.SetPreciseDestination(currentTokenDestination);
+        DebugSelectedDecision =
+            $"{roleController.CurrentRole} (Token Locked: {currentTokenTarget.name})";
+        DebugDestination = currentTokenDestination;
+        DebugTokenDecision =
+            $"Locked on {currentTokenTarget.name} (player {playerDistance:F1}m away)";
+        return true;
+    }
+
+    private void ClearTokenTarget()
+    {
+        currentTokenTarget = null;
+        currentTokenDestination = Vector3.zero;
     }
 
     private bool TryGetCurrentEvadeScore(out float score, out float pathLength, out float pathQuality)
@@ -720,6 +986,7 @@ public class UtilityAIController : MonoBehaviour
     {
         hasCurrentDestination = false;
         commitmentTimer = 0f;
+        ClearTokenTarget();
         DebugSelectedPathLength = 0f;
         DebugSelectedPathQuality = 0f;
         navMeshDriver.ClearDestination();
@@ -749,9 +1016,6 @@ public class UtilityAIController : MonoBehaviour
         );
 
         bool roleWantsSprint = false;
-
-        float chaserSprintDistance = 5f;
-        float evaderSprintThreatDistance = 15f;
 
         switch (roleController.CurrentRole)
         {

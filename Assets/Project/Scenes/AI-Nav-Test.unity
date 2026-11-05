@@ -327,6 +327,7 @@ GameObject:
   - component: {fileID: 163198837}
   - component: {fileID: 163198836}
   - component: {fileID: 163198840}
+  - component: {fileID: 163198842}
   m_Layer: 10
   m_Name: CapsuleDummy
   m_TagString: Untagged
@@ -733,6 +734,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AINavMeshDriver
   movementIntent: {fileID: 163198835}
   stoppingDistance: 1.5
+  preciseStoppingDistance: 0.1
   repathInterval: 0.2
   sprint: 0
 --- !u!114 &163198840
@@ -763,10 +765,40 @@ MonoBehaviour:
   player: {fileID: 1254120230}
   navMeshDriver: {fileID: 163198839}
   navMeshAgent: {fileID: 163198823}
+  tokenEvaluator: {fileID: 163198842}
   decisionInterval: 0.5
   destinationSampleRadius: 2
+  minimumTokenUtility: 0.15
+  chaserTokenPriorityMargin: 0.15
+  tokenTargetInterruptDistance: 10
   evadeSearchRadius: 7
   evadeCandidateCount: 8
+--- !u!114 &163198842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 163198815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e2123cf4cb64389bd1abec4d687f1e1, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: Assembly-CSharp::AITokenEvaluator
+  awarenessRadius: 20
+  navMeshSampleRadius: 2
+  pickupTriggerDistance: 0.5
+  maxTokenApproachPath: 25
+  maxTacticalDetour: 15
+  maxEvaderSeparationLoss: 4
+  movementSpeedValue: 0.8
+  staminaRegenValue: 0.55
+  staminaCostValue: 0.65
+  sprayRangeValue: 0.8
+  sprayRadiusValue: 0.7
+  evaderSprayBuffDenialValue: 0.45
+  fullEffectMagnitudeLog: 0.5
+  fullEffectDuration: 15
 --- !u!1 &262400963
 GameObject:
   m_ObjectHideFlags: 0

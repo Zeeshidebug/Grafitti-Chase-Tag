@@ -53,6 +53,17 @@ public class VaultEvaluator : MonoBehaviour
         ParkourObstacleData obstacle,
         bool landBeyondObstacle)
     {
+        return Evaluate(
+            obstacle,
+            landBeyondObstacle,
+            GetMovementDirection());
+    }
+
+    public VaultCandidate Evaluate(
+        ParkourObstacleData obstacle,
+        bool landBeyondObstacle,
+        Vector3 direction)
+    {
         if (obstacle == null || !obstacle.IsValid)
             return null;
 
@@ -78,12 +89,15 @@ public class VaultEvaluator : MonoBehaviour
 
         candidate.HasClearance = true;
 
-        Vector3 direction = GetMovementDirection();
+        direction.y = 0f;
         if (direction.sqrMagnitude <= 0.001f)
         {
             candidate.Result = VaultValidationResult.InvalidSurface;
             return candidate;
         }
+
+        direction.Normalize();
+        candidate.TravelDirection = direction;
 
         Vector3 startPosition = transform.position;
         Vector3 worldBottomOffset =
@@ -140,7 +154,8 @@ public class VaultEvaluator : MonoBehaviour
         if (logTrajectoryDebug)
             Debug.Log($"VAULT CANDIDATE ARC | current={transform.position}, takeoff={startPosition}, " +
                 $"landing={landingRoot}, obstacleTime={obstacleTime:F3}, " +
-                $"requiredArc={candidate.RequiredArcHeight:F2}, height={obstacle.Height:F2}", this);
+                $"direction={direction}, requiredArc={candidate.RequiredArcHeight:F2}, " +
+                $"height={obstacle.Height:F2}", this);
 
         return candidate;
     }

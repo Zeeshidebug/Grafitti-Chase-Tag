@@ -12,6 +12,11 @@ public class AIActionController : MonoBehaviour
     [SerializeField] private VaultExecutor vaultExecutor;
     [SerializeField] private CharacterState characterState;
     [SerializeField] private AIMovementIntent movementIntent;
+    [SerializeField] private AINavMeshDriver navMeshDriver;
+
+    [Header("Vault Alignment")]
+    [Tooltip("AI waits until its forward direction is within this angle of the obstacle face before vaulting.")]
+    [SerializeField, Range(1f, 45f)] private float vaultFacingAngleTolerance = 8f;
 
     [Header("Retry")]
     [Tooltip("Delay before retrying if VaultExecutor rejects a valid candidate, e.g. because stamina is insufficient.")]
@@ -21,6 +26,7 @@ public class AIActionController : MonoBehaviour
     [SerializeField] private bool logDecisions;
 
     private float retryCooldownTimer;
+    private bool isAligningForVault;
 
     private void Awake()
     {
@@ -35,6 +41,9 @@ public class AIActionController : MonoBehaviour
 
         if (movementIntent == null)
             movementIntent = GetComponent<AIMovementIntent>();
+
+        if (navMeshDriver == null)
+            navMeshDriver = GetComponent<AINavMeshDriver>();
     }
 
     private void Start()
@@ -42,10 +51,11 @@ public class AIActionController : MonoBehaviour
         if (parkourCandidateEvaluator == null ||
             vaultExecutor == null ||
             characterState == null ||
-            movementIntent == null)
+            movementIntent == null ||
+            navMeshDriver == null)
         {
             Debug.LogError(
-                "AIActionController requires ParkourCandidateEvaluator, VaultExecutor, CharacterState, and AIMovementIntent.",
+                "AIActionController requires ParkourCandidateEvaluator, VaultExecutor, CharacterState, AIMovementIntent, and AINavMeshDriver.",
                 this);
 
             enabled = false;
@@ -62,25 +72,60 @@ public class AIActionController : MonoBehaviour
             retryCooldownTimer - Time.deltaTime);
 
         if (characterState.CurrentState != LocomotionState.Grounded)
+        {
+            EndVaultAlignment();
             return;
+        }
 
         if (!movementIntent.Sprinting)
+        {
+            EndVaultAlignment();
             return;
+        }
 
         if (retryCooldownTimer > 0f)
+        {
+            EndVaultAlignment();
             return;
+        }
 
         // IMPORTANT: this check intentionally runs every frame.
         // Do not put it behind UtilityAIController's slower decision interval.
-        TryInitiateVault();
-    }
-
-    private void TryInitiateVault()
-    {
         if (!parkourCandidateEvaluator.TryGetVaultInitiationCandidate(
                 out VaultCandidate candidate))
+        {
+            EndVaultAlignment();
             return;
+        }
 
+        Vector3 vaultDirection = candidate.TravelDirection;
+        vaultDirection.y = 0f;
+        if (vaultDirection.sqrMagnitude <= 0.001f)
+        {
+            EndVaultAlignment();
+            return;
+        }
+
+        float facingAngle = Vector3.Angle(transform.forward, vaultDirection);
+        if (facingAngle > vaultFacingAngleTolerance)
+        {
+            if (!isAligningForVault)
+            {
+                LogDecision(
+                    $"Aligning to obstacle face. Turn={facingAngle:F1} degrees");
+            }
+
+            navMeshDriver.BeginVaultAlignment(vaultDirection);
+            isAligningForVault = true;
+            return;
+        }
+
+        EndVaultAlignment();
+        TryInitiateVault(candidate);
+    }
+
+    private void TryInitiateVault(VaultCandidate candidate)
+    {
         if (!vaultExecutor.TryExecute(candidate))
         {
             // Do not latch the obstacle when execution fails. The AI may retry
@@ -96,8 +141,18 @@ public class AIActionController : MonoBehaviour
         parkourCandidateEvaluator.NotifyVaultStarted();
 
         LogDecision(
-            $"Vault started. Arc={candidate.RequiredArcHeight:F2}, " +
+            $"Vault started. Direction={candidate.TravelDirection}, " +
+            $"Arc={candidate.RequiredArcHeight:F2}, " +
             $"landing={candidate.LandingPosition}");
+    }
+
+    private void EndVaultAlignment()
+    {
+        if (!isAligningForVault)
+            return;
+
+        navMeshDriver.EndVaultAlignment();
+        isAligningForVault = false;
     }
 
     private void LogDecision(string message)
