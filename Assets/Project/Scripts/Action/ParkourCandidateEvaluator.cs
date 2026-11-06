@@ -11,7 +11,9 @@ public class ParkourCandidateEvaluator : MonoBehaviour
     [SerializeField] private ParkourDetector detector;
     [SerializeField] private VaultEvaluator vaultEvaluator;
 
+    private CharacterState characterState;
     private Collider lastStartedObstacle;
+    private float lastActionStartedTime;
     private VaultCandidate currentVaultCandidate;
 
     private void Awake()
@@ -21,6 +23,8 @@ public class ParkourCandidateEvaluator : MonoBehaviour
 
         if (vaultEvaluator == null)
             vaultEvaluator = GetComponent<VaultEvaluator>();
+
+        characterState = GetComponent<CharacterState>();
 
         if (detector == null || vaultEvaluator == null)
         {
@@ -39,7 +43,14 @@ public class ParkourCandidateEvaluator : MonoBehaviour
         if (!detector.ObstacleDetected)
         {
             currentVaultCandidate = null;
-            lastStartedObstacle = null;
+
+            if ((characterState == null ||
+                 characterState.CurrentState == LocomotionState.Grounded) &&
+                Time.time - lastActionStartedTime > 0.2f)
+            {
+                lastStartedObstacle = null;
+            }
+
             return;
         }
 
@@ -66,29 +77,43 @@ public class ParkourCandidateEvaluator : MonoBehaviour
     {
         candidate = null;
 
-        if (detector == null ||
-            !detector.ObstacleDetected ||
+        if (!TryGetCurrentObstacle(out _) ||
             currentVaultCandidate == null ||
             !currentVaultCandidate.IsValid)
         {
             return false;
         }
 
-        Collider currentCollider = detector.CurrentObstacle.ObstacleCollider;
-        if (currentCollider != null && currentCollider == lastStartedObstacle)
-            return false;
-
         candidate = currentVaultCandidate;
         return true;
     }
 
     /// <summary>
-    /// Call only after VaultExecutor.TryExecute(candidate) returns true.
-    /// Prevents the same detected collider from repeatedly starting Vault.
+    /// Returns the detected obstacle unless an action has already started
+    /// against the same collider and the character has not cleared it.
     /// </summary>
-    public void NotifyVaultStarted()
+    public bool TryGetCurrentObstacle(out ParkourObstacleData obstacle)
     {
-        if (detector != null && detector.CurrentObstacle != null)
-            lastStartedObstacle = detector.CurrentObstacle.ObstacleCollider;
+        obstacle = null;
+
+        if (detector == null || !detector.ObstacleDetected)
+            return false;
+
+        obstacle = detector.CurrentObstacle;
+        Collider currentCollider = obstacle.ObstacleCollider;
+        if (currentCollider != null && currentCollider == lastStartedObstacle)
+        {
+            obstacle = null;
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Call after any AI parkour action successfully starts.</summary>
+    public void NotifyActionStarted(Collider obstacleCollider)
+    {
+        lastStartedObstacle = obstacleCollider;
+        lastActionStartedTime = Time.time;
     }
 }

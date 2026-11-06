@@ -2006,7 +2006,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 2184.6296, y: 5.055647, z: 2041.27}
+  m_LocalPosition: {x: 2189.2297, y: 5.055647, z: 2041.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3457,7 +3457,7 @@ Transform:
   m_GameObject: {fileID: 640271679}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2168.59, y: 2, z: 2034.73}
+  m_LocalPosition: {x: 2166.1, y: 2, z: 2034.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3699,7 +3699,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ParkourDetector
   detectionDistance: 3
-  maxObstacleHeight: 3
+  maxObstacleHeight: 8
   parkourLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -3801,6 +3801,7 @@ MonoBehaviour:
   standingClearanceLayer:
     serializedVersion: 2
     m_Bits: 64
+  navMeshSampleRadius: 2
 --- !u!114 &640271699
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3849,6 +3850,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cbfb90cf2a25ba4ea86d069f65dc7cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClimbEvaluator
+  directClimbExtraHeight: 3
+  jumpClimbExtraHeight: 5
+  minimumJumpObstacleHeight: 4
 --- !u!114 &640271702
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3868,6 +3872,7 @@ MonoBehaviour:
   staminaHUDController: {fileID: 0}
   climbDuration: 0.4
   staminaCostMultiplier: 0.3
+  navMeshSampleRadius: 2
 --- !u!114 &640271703
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3991,11 +3996,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AIActionController
   parkourCandidateEvaluator: {fileID: 640271709}
+  parkourDetector: {fileID: 640271693}
   vaultExecutor: {fileID: 640271707}
+  slideExecutor: {fileID: 640271698}
+  climbEvaluator: {fileID: 640271701}
+  climbExecutor: {fileID: 640271702}
+  characterMovement: {fileID: 640271686}
   characterState: {fileID: 640271687}
   movementIntent: {fileID: 640271688}
   navMeshDriver: {fileID: 640271689}
   vaultFacingAngleTolerance: 45
+  jumpClimbWaitTimeout: 1.5
+  jumpRecoveryTimeout: 3
   failedStartRetryCooldown: 0.5
   logDecisions: 1
 --- !u!114 &640271709
@@ -4516,6 +4528,118 @@ MonoBehaviour:
   startText: {fileID: 759481861}
   startTextDuration: 0.4
   resultDisplayDuration: 4
+--- !u!1 &748330729
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 748330733}
+  - component: {fileID: 748330732}
+  - component: {fileID: 748330731}
+  - component: {fileID: 748330730}
+  m_Layer: 6
+  m_Name: Cube (38)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!65 &748330730
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748330729}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &748330731
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748330729}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &748330732
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748330729}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!4 &748330733
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 748330729}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -0.2281, y: 4, z: -0.46445006}
+  m_LocalScale: {x: 0.11199998, y: 8, z: 0.0675}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 929646121}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!1 &759481859
 GameObject:
   m_ObjectHideFlags: 0
@@ -5624,7 +5748,7 @@ Transform:
   m_GameObject: {fileID: 922158800}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 2177, y: 2, z: 2035.27}
+  m_LocalPosition: {x: 2181.6, y: 2, z: 2035.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5857,6 +5981,7 @@ MonoBehaviour:
   standingClearanceLayer:
     serializedVersion: 2
     m_Bits: 64
+  navMeshSampleRadius: 2
 --- !u!114 &922158819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5893,6 +6018,7 @@ MonoBehaviour:
   staminaHUDController: {fileID: 1814627819}
   climbDuration: 0.4
   staminaCostMultiplier: 0.3
+  navMeshSampleRadius: 2
 --- !u!114 &922158821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5905,6 +6031,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cbfb90cf2a25ba4ea86d069f65dc7cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClimbEvaluator
+  directClimbExtraHeight: 0.75
+  jumpClimbExtraHeight: 1.75
+  minimumJumpObstacleHeight: 0.25
 --- !u!114 &922158822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6356,6 +6485,7 @@ Transform:
   m_LocalScale: {x: 200, y: 1, z: 200}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 748330733}
   - {fileID: 432823417}
   - {fileID: 1998714645}
   - {fileID: 1919289731}
@@ -6417,7 +6547,7 @@ MonoBehaviour:
   m_OverrideTileSize: 0
   m_TileSize: 256
   m_OverrideVoxelSize: 0
-  m_VoxelSize: 0.5
+  m_VoxelSize: 0.33333334
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: d1d4d8f7ba1c9db4083fb128b872ed5c, type: 2}
   m_BuildHeightMesh: 0
@@ -7076,7 +7206,7 @@ Transform:
   m_GameObject: {fileID: 1021428247}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 2184.6296, y: 6.555647, z: 2035.27}
+  m_LocalPosition: {x: 2189.2297, y: 6.555647, z: 2035.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9587,7 +9717,7 @@ Transform:
   m_GameObject: {fileID: 1750042793}
   serializedVersion: 2
   m_LocalRotation: {x: -0.65636486, y: -0.26170138, z: -0.26119936, w: 0.6576264}
-  m_LocalPosition: {x: 2157.68, y: 1.99, z: 2049}
+  m_LocalPosition: {x: 2157.68, y: 7, z: 2049}
   m_LocalScale: {x: 200, y: 199.99997, z: 199.99997}
   m_ConstrainProportionsScale: 0
   m_Children:

@@ -105,8 +105,16 @@ public class UtilityAIController : MonoBehaviour
     private Vector3 currentDestination;
     private bool hasCurrentDestination;
     private float commitmentTimer;
+    private bool wasProxyDetached;
+    private bool wasParkourTraversalActive;
+    private bool wasExitingParkourSurface;
     private BuffNerfToken currentTokenTarget;
     private Vector3 currentTokenDestination;
+    private readonly List<EvadeCandidate> evadeCandidates = new();
+    private readonly List<EvadeCandidate> eligibleEvadeCandidates = new();
+    private NavMeshPath evaluationPath;
+    private Vector3[] pathCorners;
+    private NavMeshPath EvaluationPath => evaluationPath ??= new NavMeshPath();
 
     // Read-only debug data for DebugHUD.
     public string DebugRole =>
@@ -261,32 +269,49 @@ public class UtilityAIController : MonoBehaviour
 
     private void Update()
     {
-        if (characterState != null &&
-            characterState.CurrentState != LocomotionState.Grounded)
+        // Keep decision ticks running while parkour owns physical movement.
+        // Preserve the current sprint choice during an airborne/action phase.
+        if (characterState == null ||
+            characterState.CurrentState == LocomotionState.Grounded)
+            UpdateSprintDecision();
+
+        bool proxyDetached = navMeshDriver.IsProxyDetached;
+        bool traversalActive = navMeshDriver.IsParkourTraversalActive;
+        bool traversalJustFinished = wasParkourTraversalActive && !traversalActive;
+        wasParkourTraversalActive = traversalActive;
+        bool exitingSurface = navMeshDriver.IsExitingParkourSurface;
+        bool surfaceExitJustFinished = wasExitingParkourSurface && !exitingSurface;
+        wasExitingParkourSurface = exitingSurface;
+        if (proxyDetached != wasProxyDetached || traversalJustFinished || surfaceExitJustFinished)
         {
+            // A destination chosen around the old proxy can be behind the
+            // character. Re-evaluate tactical destinations from the new origin.
+            wasProxyDetached = proxyDetached;
+            hasCurrentDestination = false;
+            commitmentTimer = 0f;
+            decisionTimer = 0f;
+        }
+
+        if (exitingSurface && roleController.CurrentRole == lastRole &&
+            roleController.CurrentRole != CharacterRole.None)
+        {
+            // Local candidates on the isolated top must not redirect the exit.
+            DebugSelectedDecision = "Parkour Exit (Disconnected Top NavMesh)";
+            DebugCandidateLines.Clear();
+            DebugCandidateCount = 0;
+            DebugEligibleCount = 0;
+            DebugSelectedScore = 0f;
+            DebugSelectedDistance = 0f;
+            DebugSelectedPathLength = 0f;
+            DebugSelectedPathQuality = 0f;
             return;
         }
 
-        UpdateSprintDecision();
-
-        if (navMeshDriver.IsOnParkourSurface)
+        if (!navMeshDriver.TryGetNavigationOrigin(out _))
         {
-            Vector3 parkourDirection = roleController.CurrentRole switch
-            {
-                CharacterRole.Chaser => player.position - transform.position,
-                CharacterRole.Evader => transform.position - player.position,
-                _ => Vector3.zero
-            };
-
-            navMeshDriver.SetParkourMovementIntent(parkourDirection);
-            DebugSelectedDecision = $"{roleController.CurrentRole} (Parkour Movement)";
-            return;
-        }
-
-        if (!navMeshAgent.isOnNavMesh)
-        {
-            ClearCurrentDestination();
-            DebugSelectedDecision = "Off NavMesh";
+            if (!proxyDetached || roleController.CurrentRole != lastRole)
+                ClearCurrentDestination();
+            DebugSelectedDecision = "Waiting for NavMesh near character";
             return;
         }
 
@@ -349,6 +374,9 @@ public class UtilityAIController : MonoBehaviour
                 destinationSampleRadius,
                 navMeshAgent.areaMask))
         {
+            if (KeepDestinationForProxySearch())
+                return;
+
             ClearCurrentDestination();
             DebugDestination = Vector3.zero;
 
@@ -367,15 +395,19 @@ public class UtilityAIController : MonoBehaviour
         DebugPlayerDistance = playerDistance;
         DebugChaseScore = score;
 
-        NavMeshPath chasePath = new NavMeshPath();
+        NavMeshPath chasePath = EvaluationPath;
         float chasePathLength = Vector3.Distance(
-            transform.position,
+            navMeshDriver.NavigationOrigin,
             hit.position);
 
-        if (navMeshAgent.CalculatePath(hit.position, chasePath) &&
+        if (navMeshDriver.TryCalculateNavigationPath(hit.position, chasePath) &&
             chasePath.status == NavMeshPathStatus.PathComplete)
         {
-            chasePathLength = CalculatePathLength(chasePath);
+            chasePathLength = NavMeshPathUtility.CalculateLength(chasePath, ref pathCorners);
+        }
+        else if (KeepDestinationForProxySearch())
+        {
+            return;
         }
 
         float playerDistanceAtDestination = Vector3.Distance(
@@ -414,6 +446,7 @@ public class UtilityAIController : MonoBehaviour
         DebugPathInvalidCount = 0;
         DebugLastCandidateFailure = "None";
         DebugAgentTransformDelta = Vector3.Distance(transform.position, navMeshAgent.nextPosition);
+        Vector3 navigationOrigin = navMeshDriver.NavigationOrigin;
 
         Vector3 awayFromPlayer = transform.position - player.position;
         awayFromPlayer.y = 0f;
@@ -423,7 +456,9 @@ public class UtilityAIController : MonoBehaviour
 
         awayFromPlayer.Normalize();
 
-        var candidates = new List<EvadeCandidate>();
+        List<EvadeCandidate> candidates = evadeCandidates;
+        candidates.Clear();
+        float bestScore = float.NegativeInfinity;
 
         int count = Mathf.Max(4, evadeCandidateCount);
 
@@ -435,7 +470,7 @@ public class UtilityAIController : MonoBehaviour
                 Quaternion.AngleAxis(angle, Vector3.up) * awayFromPlayer;
 
             Vector3 rawPosition =
-                transform.position + direction * evadeSearchRadius;
+                navigationOrigin + direction * evadeSearchRadius;
 
             if (!NavMesh.SamplePosition(
                     rawPosition,
@@ -451,21 +486,22 @@ public class UtilityAIController : MonoBehaviour
             }
 
             DebugSampleSuccessCount++;
-            NavMeshPath path = new NavMeshPath();
+            NavMeshPath path = EvaluationPath;
 
-            bool pathFound = navMeshAgent.CalculatePath(hit.position, path);
+            bool pathFound = navMeshDriver.TryCalculateNavigationPath(hit.position, path);
+            NavMeshPathStatus pathStatus = pathFound ? path.status : NavMeshPathStatus.PathInvalid;
 
-            if (!pathFound || path.status != NavMeshPathStatus.PathComplete)
+            if (pathStatus != NavMeshPathStatus.PathComplete)
             {
-                if (path.status == NavMeshPathStatus.PathPartial)
+                if (pathStatus == NavMeshPathStatus.PathPartial)
                     DebugPathPartialCount++;
                 else
                     DebugPathInvalidCount++;
 
                 DebugLastCandidateFailure =
-                    $"Path failed for candidate {i}; found={pathFound}, status={path.status}, sampled={hit.position}";
+                    $"Path failed for candidate {i}; found={pathFound}, status={pathStatus}, sampled={hit.position}";
                 if (logEvadeCandidates)
-                    DebugCandidateLines.Add($"Candidate {i}: PATH FAILED | found={pathFound} status={path.status} | sampled={hit.position}");
+                    DebugCandidateLines.Add($"Candidate {i}: PATH FAILED | found={pathFound} status={pathStatus} | sampled={hit.position}");
                 continue;
             }
 
@@ -476,13 +512,13 @@ public class UtilityAIController : MonoBehaviour
                 player.position
             );
 
-            // Straight-line distance from the AI to this candidate.
+            // Compare path length and direct distance from the same NavMesh origin.
             float straightDistance = Vector3.Distance(
-                transform.position,
+                navigationOrigin,
                 hit.position
             );
 
-            float pathLength = CalculatePathLength(path);
+            float pathLength = NavMeshPathUtility.CalculateLength(path, ref pathCorners);
 
             float pathQuality = EvaluatePathQuality(
                 straightDistance,
@@ -503,6 +539,8 @@ public class UtilityAIController : MonoBehaviour
             );
 
             candidates.Add(candidate);
+            if (score > bestScore)
+                bestScore = score;
 
             if (logEvadeCandidates)
             {
@@ -517,12 +555,16 @@ public class UtilityAIController : MonoBehaviour
 
         if (candidates.Count == 0)
         {
-            ClearCurrentDestination();
-
-            DebugSelectedDecision = "Evade (No Valid Candidate)";
-            DebugSelectedScore = 0f;
-            DebugSelectedDistance = 0f;
-            DebugDestination = Vector3.zero;
+            DebugCandidateCount = 0;
+            DebugEligibleCount = 0;
+            if (!KeepDestinationForProxySearch())
+            {
+                ClearCurrentDestination();
+                DebugSelectedDecision = "Evade (No Valid Candidate)";
+                DebugSelectedScore = 0f;
+                DebugSelectedDistance = 0f;
+                DebugDestination = Vector3.zero;
+            }
 
             if (logDecisions)
             {
@@ -531,6 +573,8 @@ public class UtilityAIController : MonoBehaviour
                     $"Transform={transform.position}, Agent.nextPosition={navMeshAgent.nextPosition}, " +
                     $"Agent.isOnNavMesh={navMeshAgent.isOnNavMesh}, Agent.enabled={navMeshAgent.enabled}, " +
                     $"Agent.updatePosition={navMeshAgent.updatePosition}, Agent.velocity={navMeshAgent.velocity}, " +
+                    $"navigationOrigin={navigationOrigin}, proxyDetached={navMeshDriver.IsProxyDetached}, " +
+                    $"navigationStatus={navMeshDriver.DebugNavigationStatus}, " +
                     $"Transform-Agent delta={DebugAgentTransformDelta:F3}, areaMask={navMeshAgent.areaMask}, " +
                     $"sample success/fail={DebugSampleSuccessCount}/{DebugSampleFailureCount}, " +
                     $"path complete/partial/invalid={DebugPathCompleteCount}/{DebugPathPartialCount}/{DebugPathInvalidCount}, " +
@@ -542,50 +586,37 @@ public class UtilityAIController : MonoBehaviour
             return;
         }
 
-        // 1. Find the highest utility score FIRST.
-        float bestScore = float.NegativeInfinity;
-
-        foreach (EvadeCandidate candidate in candidates)
-        {
-            if (candidate.Score > bestScore)
-                bestScore = candidate.Score;
-        }
-
-        // 2. Evaluate the current destination.
+        // Compare the current destination with the best candidate found above.
         bool currentDestinationValid =
             TryGetCurrentEvadeScore(out float currentScore, out float currentPathLength, out float currentPathQuality);
 
-        // 3. Check whether we must switch.
-        bool mustSwitch = !currentDestinationValid;
+        bool keepCommitment = currentDestinationValid && commitmentTimer > 0f;
+        float scoreAdvantage = bestScore - currentScore;
+        bool keepHysteresis = currentDestinationValid && useDestinationHysteresis &&
+            scoreAdvantage <= evadeSwitchingMargin;
 
-        // 4. Apply commitment and hysteresis here.
-        // Both can now safely use bestScore.
-
-        // Keep the current choice during its commitment period.
-        if (currentDestinationValid && commitmentTimer > 0f)
+        if (keepCommitment || keepHysteresis)
         {
+            float currentPlayerDistance = Vector3.Distance(currentDestination, player.position);
             if (TryUseTokenDestination(
                     currentDestination,
                     currentPathLength,
                     currentScore,
-                    Vector3.Distance(currentDestination, player.position)))
+                    currentPlayerDistance))
             {
                 return;
             }
 
             navMeshDriver.SetDestination(currentDestination);
 
-            DebugSelectedDecision = "Evade (Committed)";
+            DebugSelectedDecision = keepCommitment ? "Evade (Committed)" : "Evade (Hysteresis)";
             DebugSelectedScore = currentScore;
-            DebugSelectedDistance = Vector3.Distance(
-                currentDestination,
-                player.position
-            );
+            DebugSelectedDistance = currentPlayerDistance;
             DebugDestination = currentDestination;
             DebugSelectedPathLength = currentPathLength;
             DebugSelectedPathQuality = currentPathQuality;
 
-            if (logDecisions)
+            if (logDecisions && keepCommitment)
             {
                 Debug.Log(
                     $"AI Evader | Keeping destination | " +
@@ -594,56 +625,23 @@ public class UtilityAIController : MonoBehaviour
                     this
                 );
             }
+            else if (logDecisions)
+            {
+                Debug.Log(
+                    $"AI Evader | Keeping destination | " +
+                    $"Current: {currentScore:F2} | " +
+                    $"Best alternative: {bestScore:F2} | " +
+                    $"Advantage: {scoreAdvantage:F2}",
+                    this
+                );
+            }
 
             return;
         }
 
-        // Once commitment expires, apply hysteresis.
-        if (!mustSwitch && currentDestinationValid && useDestinationHysteresis)
-        {
-            float scoreAdvantage = bestScore - currentScore;
-
-            if (scoreAdvantage <= evadeSwitchingMargin)
-            {
-                if (TryUseTokenDestination(
-                        currentDestination,
-                        currentPathLength,
-                        currentScore,
-                        Vector3.Distance(currentDestination, player.position)))
-                {
-                    return;
-                }
-
-                navMeshDriver.SetDestination(currentDestination);
-
-                DebugSelectedDecision = "Evade (Hysteresis)";
-                DebugSelectedScore = currentScore;
-                DebugSelectedDistance = Vector3.Distance(
-                    currentDestination,
-                    player.position
-                );
-                DebugDestination = currentDestination;
-                DebugSelectedPathLength = currentPathLength;
-                DebugSelectedPathQuality = currentPathQuality;
-
-                if (logDecisions)
-                {
-                    Debug.Log(
-                        $"AI Evader | Keeping destination | " +
-                        $"Current: {currentScore:F2} | " +
-                        $"Best alternative: {bestScore:F2} | " +
-                        $"Advantage: {scoreAdvantage:F2}",
-                        this
-                    );
-                }
-
-                return;
-            }
-        }
-
         // Keep only candidates close enough to the best score.
-        var eligibleCandidates =
-            new List<EvadeCandidate>();
+        List<EvadeCandidate> eligibleCandidates = eligibleEvadeCandidates;
+        eligibleCandidates.Clear();
 
         foreach (EvadeCandidate candidate in candidates)
         {
@@ -849,8 +847,8 @@ public class UtilityAIController : MonoBehaviour
             return false;
         }
 
-        NavMeshPath path = new NavMeshPath();
-        bool pathFound = navMeshAgent.CalculatePath(
+        NavMeshPath path = EvaluationPath;
+        bool pathFound = navMeshDriver.TryCalculateNavigationPath(
             currentTokenDestination,
             path);
 
@@ -882,20 +880,23 @@ public class UtilityAIController : MonoBehaviour
         pathLength = 0f;
         pathQuality = 0f;
 
-        if (!hasCurrentDestination || !navMeshAgent.isOnNavMesh)
+        if (!hasCurrentDestination ||
+            !navMeshDriver.TryGetNavigationOrigin(out Vector3 navigationOrigin))
             return false;
 
         // Don't keep a destination that has already been reached.
-        if (Vector3.Distance(transform.position, currentDestination)
+        Vector3 arrivalOrigin = navMeshDriver.IsProxyDetached
+            ? navigationOrigin : transform.position;
+        if (Vector3.Distance(arrivalOrigin, currentDestination)
             <= destinationArrivalDistance)
         {
             return false;
         }
 
         // Confirm that the current destination is still reachable.
-        NavMeshPath path = new NavMeshPath();
+        NavMeshPath path = EvaluationPath;
 
-        bool pathFound = navMeshAgent.CalculatePath(
+        bool pathFound = navMeshDriver.TryCalculateNavigationPath(
             currentDestination,
             path
         );
@@ -904,11 +905,11 @@ public class UtilityAIController : MonoBehaviour
             return false;
 
         float straightDistance = Vector3.Distance(
-            transform.position,
+            navigationOrigin,
             currentDestination
         );
 
-        pathLength = CalculatePathLength(path);
+        pathLength = NavMeshPathUtility.CalculateLength(path, ref pathCorners);
 
         pathQuality = EvaluatePathQuality(
             straightDistance,
@@ -926,28 +927,6 @@ public class UtilityAIController : MonoBehaviour
         );
 
         return true;
-    }
-
-    private float CalculatePathLength(NavMeshPath path)
-    {
-        if (path == null)
-            return 0f;
-
-        Vector3[] corners = path.corners;
-        if (corners.Length < 2)
-            return 0f;
-
-        float totalLength = 0f;
-
-        for (int i = 1; i < corners.Length; i++)
-        {
-            totalLength += Vector3.Distance(
-                corners[i - 1],
-                corners[i]
-            );
-        }
-
-        return totalLength;
     }
 
     private float EvaluatePathQuality(
@@ -980,6 +959,17 @@ public class UtilityAIController : MonoBehaviour
             (distanceUtility * evadeDistanceWeight +
              pathQuality * evadePathQualityWeight) / totalWeight
         );
+    }
+
+    private bool KeepDestinationForProxySearch()
+    {
+        if (!navMeshDriver.IsProxyDetached)
+            return false;
+
+        // A temporary search failure must not erase the action's exit direction
+        // or the stored destination. The next decision tick retries the search.
+        DebugSelectedDecision = $"{roleController.CurrentRole} (Proxy: retrying destination search)";
+        return true;
     }
 
     private void ClearCurrentDestination()

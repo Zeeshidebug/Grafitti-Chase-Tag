@@ -25,8 +25,13 @@ public class AITokenEvaluator : MonoBehaviour
 
     private BuffNerfController buffNerfController;
     private StaminaSystem staminaSystem;
+    private AINavMeshDriver navMeshDriver;
     private readonly List<TokenCandidate> candidates = new();
     private readonly List<string> debugCandidateLines = new();
+    private readonly List<Collider> tokenColliders = new();
+    private NavMeshPath evaluationPath;
+    private Vector3[] pathCorners;
+    private NavMeshPath EvaluationPath => evaluationPath ??= new NavMeshPath();
 
     public IReadOnlyList<TokenCandidate> Candidates => candidates;
     public IReadOnlyList<string> DebugCandidateLines => debugCandidateLines;
@@ -69,6 +74,7 @@ public class AITokenEvaluator : MonoBehaviour
     {
         buffNerfController = GetComponent<BuffNerfController>();
         staminaSystem = GetComponent<StaminaSystem>();
+        navMeshDriver = GetComponent<AINavMeshDriver>();
     }
 
     public void EvaluateCandidates(
@@ -92,10 +98,18 @@ public class AITokenEvaluator : MonoBehaviour
         }
 
         if (navMeshAgent == null ||
-            !navMeshAgent.enabled ||
-            !navMeshAgent.isOnNavMesh)
+            !navMeshAgent.enabled)
         {
-            DebugStatus = "AI agent is not on NavMesh";
+            DebugStatus = "AI agent is unavailable";
+            return;
+        }
+
+        bool hasNavigationOrigin = navMeshDriver != null
+            ? navMeshDriver.TryGetNavigationOrigin(out _)
+            : navMeshAgent.isOnNavMesh;
+        if (!hasNavigationOrigin)
+        {
+            DebugStatus = "No valid navigation origin for token paths";
             return;
         }
 
@@ -205,25 +219,25 @@ public class AITokenEvaluator : MonoBehaviour
             return false;
         }
 
-        NavMeshPath approachPath = new NavMeshPath();
-        bool approachPathFound = navMeshAgent.CalculatePath(
-            pickupPoint.position,
-            approachPath);
+        NavMeshPath approachPath = EvaluationPath;
+        bool approachPathFound = navMeshDriver != null
+            ? navMeshDriver.TryCalculateNavigationPath(pickupPoint.position, approachPath)
+            : navMeshAgent.CalculatePath(pickupPoint.position, approachPath);
 
         if (!approachPathFound || approachPath.status != NavMeshPathStatus.PathComplete)
         {
-            reason = $"Approach path {approachPath.status}";
+            reason = $"Approach path {(approachPathFound ? approachPath.status : NavMeshPathStatus.PathInvalid)}";
             return false;
         }
 
-        float approachPathLength = CalculatePathLength(approachPath);
+        float approachPathLength = NavMeshPathUtility.CalculateLength(approachPath, ref pathCorners);
         if (approachPathLength > maxTokenApproachPath)
         {
             reason = $"Approach path too long ({approachPathLength:F1}m)";
             return false;
         }
 
-        NavMeshPath returnPath = new NavMeshPath();
+        NavMeshPath returnPath = EvaluationPath;
         bool returnPathFound = NavMesh.CalculatePath(
             pickupPoint.position,
             tacticalDestination,
@@ -237,7 +251,7 @@ public class AITokenEvaluator : MonoBehaviour
         }
 
         float routeViaToken =
-            approachPathLength + CalculatePathLength(returnPath);
+            approachPathLength + NavMeshPathUtility.CalculateLength(returnPath, ref pathCorners);
         float detourDistance = Mathf.Max(
             0f,
             routeViaToken - tacticalPathLength);
@@ -347,9 +361,8 @@ public class AITokenEvaluator : MonoBehaviour
             }
         }
 
-        float effectMagnitude = effect.multiplier > 0f
-            ? Mathf.Abs(Mathf.Log(effect.multiplier))
-            : 0f;
+        // Non-positive multipliers were rejected above.
+        float effectMagnitude = Mathf.Abs(Mathf.Log(effect.multiplier));
 
         float magnitudeFactor = 0.65f + 0.35f * Mathf.Clamp01(
             effectMagnitude / fullEffectMagnitudeLog);
@@ -420,12 +433,12 @@ public class AITokenEvaluator : MonoBehaviour
         pickupPoint = default;
         reason = string.Empty;
 
-        Collider[] colliders = token.GetComponentsInChildren<Collider>();
+        token.GetComponentsInChildren(false, tokenColliders);
         bool foundTrigger = false;
         bool foundNavMeshPoint = false;
         float bestTriggerDistance = float.PositiveInfinity;
 
-        foreach (Collider tokenCollider in colliders)
+        foreach (Collider tokenCollider in tokenColliders)
         {
             if (tokenCollider == null ||
                 !tokenCollider.enabled ||
@@ -483,17 +496,4 @@ public class AITokenEvaluator : MonoBehaviour
                statType == StatType.TagSprayRadius;
     }
 
-    private static float CalculatePathLength(NavMeshPath path)
-    {
-        if (path == null)
-            return 0f;
-
-        Vector3[] corners = path.corners;
-        float length = 0f;
-
-        for (int i = 1; i < corners.Length; i++)
-            length += Vector3.Distance(corners[i - 1], corners[i]);
-
-        return length;
-    }
 }

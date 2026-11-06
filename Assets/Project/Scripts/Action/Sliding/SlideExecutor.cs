@@ -21,12 +21,14 @@ public class SlideExecutor : MonoBehaviour
 
     [SerializeField]
     private LayerMask standingClearanceLayer;
+    [SerializeField, Min(0.1f)] private float navMeshSampleRadius = 2f;
 
     public float SlideSpeedMultiplier =>
     slideSpeedMultiplier;
 
     private CharacterController characterController;
     private StaminaSystem staminaSystem;
+    private AINavMeshDriver aiNavMeshDriver;
 
     private float standingHeight;
     private Vector3 standingCenter;
@@ -89,6 +91,9 @@ public class SlideExecutor : MonoBehaviour
         staminaSystem =
             GetComponent<StaminaSystem>();
 
+        aiNavMeshDriver =
+            GetComponent<AINavMeshDriver>();
+
         standingHeight =
             characterController.height;
 
@@ -102,13 +107,17 @@ public class SlideExecutor : MonoBehaviour
         if (isExecuting)
             return false;
 
+        if (characterController == null || characterState == null || staminaSystem == null)
+            return false;
+
         float slideCost =
         staminaSystem.MaxStamina *
         staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(slideCost))
         {
-            staminaHUDController.NotifyInsufficientStamina();
+            if (staminaHUDController != null)
+                staminaHUDController.NotifyInsufficientStamina();
             return false;
         }
 
@@ -120,13 +129,75 @@ public class SlideExecutor : MonoBehaviour
 
         ApplySlidingGeometry();
 
+        if (aiNavMeshDriver != null)
+            aiNavMeshDriver.BeginParkourTraversal();
+
         characterState.SetState(
             LocomotionState.Sliding
         );
 
-        animator.SetTrigger("Slide");
+        if (animator != null)
+            animator.SetTrigger("Slide");
 
         return true;
+    }
+
+    public bool CanPassUnderObstacle(
+        ParkourObstacleData obstacle,
+        Vector3 direction,
+        LayerMask obstacleLayer)
+    {
+        if (characterController == null ||
+            obstacle == null ||
+            !obstacle.IsValid ||
+            obstacleLayer.value == 0 ||
+            !ObstacleProjectionUtility.TryGetProjectedFarEdge(
+                obstacle,
+                direction,
+                out float farEdgeProjection))
+        {
+            return false;
+        }
+
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.001f)
+            return false;
+
+        direction.Normalize();
+
+        float slideHeight = Mathf.Max(
+            characterController.radius * 2f,
+            standingHeight * slideHeightRatio);
+
+        float standingBottomOffset =
+            standingCenter.y - standingHeight * 0.5f;
+
+        Vector3 slideCenter = standingCenter;
+        slideCenter.y = standingBottomOffset + slideHeight * 0.5f;
+
+        Vector3 worldCenter = transform.TransformPoint(slideCenter);
+        float radius = characterController.radius;
+        float segmentHalfHeight = Mathf.Max(0f, slideHeight * 0.5f - radius);
+        Vector3 point1 = worldCenter + transform.up * segmentHalfHeight;
+        Vector3 point2 = worldCenter - transform.up * segmentHalfHeight;
+
+        float distancePastObstacle =
+            farEdgeProjection
+            - Vector3.Dot(transform.position, direction)
+            + radius
+            + 0.05f;
+
+        if (distancePastObstacle <= 0f)
+            return false;
+
+        return !Physics.CapsuleCast(
+            point1,
+            point2,
+            radius,
+            direction,
+            distancePastObstacle,
+            obstacleLayer,
+            QueryTriggerInteraction.Ignore);
     }
 
     private void Update()
@@ -154,6 +225,14 @@ public class SlideExecutor : MonoBehaviour
         characterState.SetState(
             LocomotionState.Grounded
         );
+
+        if (aiNavMeshDriver != null &&
+            !aiNavMeshDriver.RecoverAfterParkour(navMeshSampleRadius))
+        {
+            Debug.LogWarning(
+                $"SLIDE NAVMESH RECOVERY FAILED | position={transform.position}",
+                this);
+        }
     }
 
     private void ApplySlidingGeometry()

@@ -486,6 +486,9 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label($"Sprinting: {navMeshDriver.SprintRequested}");
         GUILayout.Label($"Stamina Ratio: {staminaEvaluator.SprintUtility:F2}");
         GUILayout.Label($"Player Distance: {aiController.DebugPlayerDistance:F2}");
+        GUILayout.Label(
+            $"Navigation: {(navMeshDriver.IsProxyDetached ? "Proxy" : "Synced")} | " +
+            $"Parkour Exit: {navMeshDriver.IsExitingParkourSurface}");
 
         GUILayout.Space(2f);
         GUILayout.Label("UTILITY SCORES");

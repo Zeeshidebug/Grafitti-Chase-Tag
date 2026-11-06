@@ -16,6 +16,7 @@ public class ParkourDetector : MonoBehaviour
     [SerializeField] private LayerMask wallReboundLayer;
 
     private CharacterController characterController;
+    private Collider[] poleOverlaps = new Collider[8];
 
     // Optional direction override for AI/local path-aware detection.
     private Vector3 obstacleDetectionDirection;
@@ -27,6 +28,7 @@ public class ParkourDetector : MonoBehaviour
 
     public bool PoleDetected => CurrentPole != null && CurrentPole.IsValid;
     public bool ObstacleDetected => CurrentObstacle != null && CurrentObstacle.IsValid;
+    public LayerMask ParkourLayer => parkourLayer;
 
     private void Awake()
     {
@@ -154,13 +156,28 @@ public class ParkourDetector : MonoBehaviour
 
     private void DetectPole()
     {
-        Collider[] colliders = Physics.OverlapSphere(
+        int overlapCount = Physics.OverlapSphereNonAlloc(
             transform.position,
             poleDetectionRadius,
+            poleOverlaps,
             poleLayer,
             QueryTriggerInteraction.Ignore);
 
-        if (colliders.Length == 0)
+        if (overlapCount == poleOverlaps.Length)
+        {
+            // A full buffer may omit the closest pole. Keep all hits and grow
+            // the retained buffer so dense areas do not allocate every frame.
+            Collider[] allOverlaps = Physics.OverlapSphere(
+                transform.position,
+                poleDetectionRadius,
+                poleLayer,
+                QueryTriggerInteraction.Ignore);
+            poleOverlaps = new Collider[Mathf.Max(poleOverlaps.Length * 2, allOverlaps.Length + 1)];
+            System.Array.Copy(allOverlaps, poleOverlaps, allOverlaps.Length);
+            overlapCount = allOverlaps.Length;
+        }
+
+        if (overlapCount == 0)
         {
             CurrentPole = null;
             return;
@@ -169,8 +186,10 @@ public class ParkourDetector : MonoBehaviour
         Collider closestCollider = null;
         float closestDistance = float.MaxValue;
 
-        foreach (Collider collider in colliders)
+        for (int i = 0; i < overlapCount; i++)
         {
+            Collider collider = poleOverlaps[i];
+            poleOverlaps[i] = null;
             Vector3 closestPoint = collider.ClosestPoint(transform.position);
             float distance = Vector3.Distance(transform.position, closestPoint);
 

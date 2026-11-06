@@ -4,6 +4,7 @@ public enum ClimbValidationResult
 {
     Valid,
     NoObstacle,
+    HeightOutsideAIRange,
 }
 
 public class ClimbCandidate
@@ -17,4 +18,6 @@ public class ClimbCandidate
     public Vector3 ClimbPosition { get; set; }
 
     public ParkourObstacleData Obstacle { get; set; }
+
+    public bool RequiresJump { get; set; }
 }
