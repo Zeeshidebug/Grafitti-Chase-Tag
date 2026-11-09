@@ -200,6 +200,13 @@ public class SlideExecutor : MonoBehaviour
             QueryTriggerInteraction.Ignore);
     }
 
+    public void CancelForSpawn()
+    {
+        if (isExecuting)
+            RestoreStandingGeometry();
+        isExecuting = false;
+    }
+
     private void Update()
     {
         if (!isExecuting)

@@ -17,7 +17,22 @@ public class TaggingController : MonoBehaviour
     [SerializeField] private float sprayAngle = 45f;
     [SerializeField] private LayerMask targetLayer;
 
+    [Tooltip("Assign the opposing receiver to request a tag automatically within Spray Range.")]
+    [SerializeField] private TagReceiver proximityTarget;
+
+    private TagReceiver ownReceiver;
+    private RoleController proximityTargetRole;
     private float cooldownTimer;
+
+    private float EffectiveRange => sprayRange *
+        buffNerfController.GetStatMultiplier(StatType.TagSprayRange);
+
+    private void Awake()
+    {
+        ownReceiver = GetComponent<TagReceiver>();
+        if (proximityTarget != null)
+            proximityTargetRole = proximityTarget.GetComponent<RoleController>();
+    }
 
     public bool IsOnCooldown =>
         cooldownTimer > 0f;
@@ -34,14 +49,23 @@ public class TaggingController : MonoBehaviour
 
     public bool TryTag()
     {
-        if (!movementIntent.Tagging)
+        if (!roleController.IsChaser || IsOnCooldown || (ownReceiver != null && !ownReceiver.RoundIsPlaying))
             return false;
 
-        if (!roleController.IsChaser)
-            return false;
+        if (proximityTarget != null)
+        {
+            if (!proximityTarget.isActiveAndEnabled || proximityTargetRole == null || !proximityTargetRole.IsEvader)
+                return false;
 
-        if (IsOnCooldown)
+            float range = EffectiveRange;
+            if ((targetLayer.value & (1 << proximityTarget.gameObject.layer)) == 0 ||
+                (proximityTarget.transform.position - transform.position).sqrMagnitude > range * range)
+                return false;
+        }
+        else if (movementIntent == null || !movementIntent.Tagging)
+        {
             return false;
+        }
 
         float staminaCost =
             staminaSystem.MaxStamina *
@@ -49,13 +73,16 @@ public class TaggingController : MonoBehaviour
 
         if (!staminaSystem.TryConsume(staminaCost))
         {
-            staminaHUDController.NotifyInsufficientStamina();
+            staminaHUDController?.NotifyInsufficientStamina();
             return false;
         }
 
         cooldownTimer = cooldownDuration;
 
-        PerformTagSpray();
+        if (proximityTarget != null)
+            proximityTarget.ReceiveTag();
+        else
+            PerformTagSpray();
 
         animator.SetTrigger("Tagging");
 
@@ -64,9 +91,7 @@ public class TaggingController : MonoBehaviour
 
     private void PerformTagSpray()
     {
-        float finalSprayRange =
-        sprayRange *
-        buffNerfController.GetStatMultiplier(StatType.TagSprayRange);
+        float finalSprayRange = EffectiveRange;
 
         float finalSprayAngle =
         sprayAngle *

@@ -75,6 +75,47 @@ public class CharacterMovement : MonoBehaviour
         }
     }
 
+    public void SpawnAt(Transform marker)
+    {
+        GetComponent<VaultExecutor>()?.CancelForSpawn();
+        GetComponent<ClimbExecutor>()?.CancelForSpawn();
+        slideExecutor?.CancelForSpawn();
+        if (poleSpinExecutor != null && poleSpinExecutor.IsExecuting)
+            poleSpinExecutor.FinishSpin();
+        if (wallReboundExecutor != null && wallReboundExecutor.IsExecuting)
+            wallReboundExecutor.FinishRebound();
+        if (ticTacExecutor != null && ticTacExecutor.IsExecuting)
+            ticTacExecutor.FinishTicTac();
+
+        currentSpeed = moveSpeed;
+        verticalVelocity = 0f;
+        CurrentVelocity = Vector3.zero;
+        releaseMomentum = Vector3.zero;
+        trackingFall = false;
+        jumpAnimationActive = false;
+        hasLeftGround = false;
+        characterState.SetState(LocomotionState.Grounded);
+
+        Vector3 previousPosition = transform.position;
+        characterController.enabled = false;
+        transform.rotation = marker.rotation;
+        // Markers can sit slightly above the floor. Land the standing capsule
+        // and the navigation proxy on the same surface.
+        Vector3 feet = marker.position;
+        float probeLift = characterController.skinWidth + 0.1f;
+        int groundMask = Physics.DefaultRaycastLayers & ~(1 << gameObject.layer);
+        if (Physics.Raycast(feet + Vector3.up * probeLift, Vector3.down, out RaycastHit ground,
+            characterController.height + probeLift, groundMask, QueryTriggerInteraction.Ignore))
+            feet = ground.point;
+
+        transform.position = feet - CharacterControllerGeometry.GetWorldBottomOffset(characterController);
+        GetComponent<AIActionController>()?.ResetForSpawn();
+        GetComponent<UtilityAIController>()?.ResetForSpawn();
+        GetComponent<AINavMeshDriver>()?.ResetForSpawn(feet);
+        GetComponent<PlayerMovementIntent>()?.OnSpawn(transform.position - previousPosition);
+        characterController.enabled = true;
+    }
+
     private void Update()
     {
         if (characterState.CurrentState == LocomotionState.Vaulting ||

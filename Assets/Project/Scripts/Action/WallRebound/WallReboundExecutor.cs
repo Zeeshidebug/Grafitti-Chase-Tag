@@ -88,7 +88,8 @@ public class WallReboundExecutor : MonoBehaviour
 
         if (!staminaSystem.TryConsume(staminaCost))
         {
-            staminaHUDController.NotifyInsufficientStamina();
+            if (staminaHUDController != null)
+                staminaHUDController.NotifyInsufficientStamina();
             return false;
         }
 

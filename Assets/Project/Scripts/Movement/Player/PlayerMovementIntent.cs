@@ -38,6 +38,13 @@ public class PlayerMovementIntent : MonoBehaviour, ICharacterMovementIntent
             Debug.LogWarning("PlayerMovementIntent has no camera; using character-relative movement.", this);
     }
 
+    public void OnSpawn(Vector3 positionDelta)
+    {
+        Unity.Cinemachine.CinemachineCore.OnTargetObjectWarped(transform, positionDelta);
+        FacingDirection = transform.forward;
+        facingChangeTimer = 0f;
+    }
+
     private void Update()
     {
         CalculateIntent();

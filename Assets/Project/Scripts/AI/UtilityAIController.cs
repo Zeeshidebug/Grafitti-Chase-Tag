@@ -240,6 +240,15 @@ public class UtilityAIController : MonoBehaviour
             tokenEvaluator = GetComponent<AITokenEvaluator>();
     }
 
+    public void ResetForSpawn()
+    {
+        hasCurrentDestination = false;
+        commitmentTimer = 0f;
+        ClearTokenTarget();
+        decisionTimer = 0f;
+        isSprintRequested = false;
+    }
+
     private void Start()
     {
         if (roleController == null ||

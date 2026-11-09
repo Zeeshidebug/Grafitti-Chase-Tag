@@ -74,6 +74,14 @@ public class AIActionController : MonoBehaviour
             navMeshDriver = GetComponent<AINavMeshDriver>();
     }
 
+    public void ResetForSpawn()
+    {
+        isAligningForAction = false;
+        pendingJumpClimbCandidate = null;
+        jumpActionInProgress = false;
+        retryCooldownTimer = 0f;
+    }
+
     private void Start()
     {
         if (parkourCandidateEvaluator == null ||

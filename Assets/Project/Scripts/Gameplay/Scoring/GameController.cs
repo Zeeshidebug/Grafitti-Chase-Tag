@@ -9,6 +9,12 @@ public class GameController : MonoBehaviour
     [SerializeField] private RoleController playerRoleController;
     [SerializeField] private RoleController aiRoleController;
 
+    [Header("Round Spawn Points (feet)")]
+    [SerializeField] private Transform spawnPointA1;
+    [SerializeField] private Transform spawnPointA2;
+    [SerializeField] private Transform spawnPointB1;
+    [SerializeField] private Transform spawnPointB2;
+
     [Header("Game Settings")]
     [SerializeField] private int maxRounds = 5;
     [SerializeField] private int roundsToWin = 3;
@@ -63,7 +69,28 @@ public class GameController : MonoBehaviour
 
         Debug.Log($"ROUND {currentRound} STARTING");
 
+        PositionCharactersForRound();
         roundController.StartRound();
+    }
+
+    private void PositionCharactersForRound()
+    {
+        if (!spawnPointA1 && !spawnPointA2 && !spawnPointB1 && !spawnPointB2)
+            return;
+
+        if (!spawnPointA1 || !spawnPointA2 || !spawnPointB1 || !spawnPointB2)
+        {
+            Debug.LogError("Assign all four round spawn points.", this);
+            return;
+        }
+
+        Transform pointA = Random.value < 0.5f ? spawnPointA1 : spawnPointA2;
+        Transform pointB = Random.value < 0.5f ? spawnPointB1 : spawnPointB2;
+        bool playerStartsAtA = Random.value < 0.5f;
+
+        playerRoleController.GetComponent<CharacterMovement>().SpawnAt(playerStartsAtA ? pointA : pointB);
+        aiRoleController.GetComponent<CharacterMovement>().SpawnAt(playerStartsAtA ? pointB : pointA);
+        Physics.SyncTransforms();
     }
 
     /// Memproses skor dan mengecek apakah match sudah berakhir.

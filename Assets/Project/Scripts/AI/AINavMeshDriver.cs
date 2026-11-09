@@ -530,6 +530,37 @@ public class AINavMeshDriver : MonoBehaviour
             StopNavigationIntent();
     }
 
+    public void ResetForSpawn(Vector3 feet)
+    {
+        ClearDestination();
+        isParkourTraversalActive = false;
+        parkourRecoveryPending = false;
+        IsOnParkourSurface = false;
+        navigationOriginFrame = -1;
+        repathTimer = 0f;
+        movementIntent.SetMovementIntent(Vector3.zero, transform.forward);
+        movementIntent.SetJumpPressed(false);
+
+        Vector3 rootPosition = transform.position;
+        NavMeshQueryFilter filter = new NavMeshQueryFilter
+        {
+            agentTypeID = agent.agentTypeID,
+            areaMask = agent.areaMask
+        };
+        proxySyncFailed = !NavMesh.SamplePosition(feet, out NavMeshHit hit, agentProxySampleRadius, filter)
+            || !agent.Warp(hit.position);
+        transform.position = rootPosition;
+        if (proxySyncFailed)
+        {
+            Debug.LogWarning($"No NavMesh at spawn point {feet}.", this);
+            return;
+        }
+
+        agent.ResetPath();
+        agent.velocity = Vector3.zero;
+        agent.isStopped = false;
+    }
+
     private void OnDisable()
     {
         EndParkourAlignment();

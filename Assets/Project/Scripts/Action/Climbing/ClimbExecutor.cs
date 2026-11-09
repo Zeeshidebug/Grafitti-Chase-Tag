@@ -102,6 +102,11 @@ public class ClimbExecutor : MonoBehaviour
         return true;
     }
 
+    public void CancelForSpawn()
+    {
+        isExecuting = false;
+    }
+
     private void Update()
     {
         if (!isExecuting)
