@@ -57,6 +57,15 @@ public class TaggingController : MonoBehaviour
 
     public bool TryTag()
     {
+        // Cek apakah input tagging terdeteksi.
+        if (movementIntent.Tagging)
+        {
+            Debug.Log("TAGGING INPUT TERDETEKSI!");
+        }
+        if (!movementIntent.Tagging)
+            return false;
+            
+            
         if (!movementIntent.Tagging)
             return false;
 
