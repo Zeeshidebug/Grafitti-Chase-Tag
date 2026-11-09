@@ -18,12 +18,17 @@ public class PlayerSprintEffectsController : MonoBehaviour
 
         bool isGrounded = characterState.CurrentState == LocomotionState.Grounded;
 
-        bool shouldSpawnDust = playerMovement.Sprinting && isGrounded;
+        bool isSliding = characterState.CurrentState == LocomotionState.Sliding;
+        
+        bool shouldSpawnDust = (playerMovement.Sprinting && isGrounded) || isSliding;
+
+        bool shouldActivateTrails = playerMovement.Sprinting || isSliding;
 
         ToggleParticles(shouldSpawnDust);
         ToggleTrails(playerMovement.Sprinting);
 
     }
+
 
     private void ToggleParticles(bool active)
     {
