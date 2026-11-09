@@ -14,6 +14,7 @@ public class PoleSpinCandidate
     public PoleSpinValidationResult Result { get; set; }
 
     public Vector3 PolePosition { get; set; }
+    public Collider PoleCollider { get; set; }
 
     public Vector3 PoleNormal { get; set; }
 }

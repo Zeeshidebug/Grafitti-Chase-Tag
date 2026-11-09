@@ -33,6 +33,8 @@ public class PoleSpinExecutor : MonoBehaviour
         private set;
     }
 
+    public Collider CurrentPoleCollider { get; private set; }
+
     public Vector3 CurrentSpinDirection
     {
         get;
@@ -92,6 +94,7 @@ public class PoleSpinExecutor : MonoBehaviour
             return false;
 
         currentAngle = 0f;
+        CurrentPoleCollider = candidate.PoleCollider;
 
         previousAngle = currentAngle;
 
@@ -155,6 +158,7 @@ public class PoleSpinExecutor : MonoBehaviour
         );
 
         IsExecuting = false;
+        CurrentPoleCollider = null;
 
         characterState.SetState(
             LocomotionState.Airborne

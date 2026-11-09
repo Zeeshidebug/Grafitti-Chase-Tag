@@ -1,0 +1,85 @@
+MOVEMENT CAMERA
+
+Configured scenes: Gameplay, AI-NAV-TEST2, AI-Nav-Test.
+
+Input ownership
+- CinemachineInputAxisController drives only OrbitalFollow X/Y.
+- The orbit uses WorldSpace and wraps horizontally. Radius, target height,
+  recentering and damping use each scene's Inspector settings.
+- RotationComposer aims at that height without a second Look input.
+- PlayerMovementIntent READS the rendered camera basis for WASD movement.
+  It never writes camera rotation or reads Look. Its delayed facing affects
+  the actor only. Input runs before intent, then movement.
+
+MovementCameraFeedback (on CinemachineCamera)
+- Sprint: up to +5 vertical FOV degrees, 0.20 s enter / 0.35 s recover.
+  Requires sprint intent, available stamina and actual movement. Grounded
+  sprint has a short 0.15 s airborne grace. A blocked player gets no boost.
+- Slide: up to +7 degrees TOTAL, camera/focus lowered 0.45 m. Timing is
+  0.10 s enter / 0.22 s recover. Remains lowered until SlideExecutor finishes,
+  including when a low ceiling prevents standing.
+- Landing: up to 0.08 m dip, recovers in 0.18 s; ignores small steps.
+- Vault: hold the entry camera position, lift 0.30 m, widen FOV by 8 degrees.
+  Enter in 0.12 s, return to the live orbit in 0.65 s, recover FOV in 0.45 s.
+- Climb: lift 0.45 m and widen FOV by 7 degrees. Enter in 0.15 s, return
+  in 0.80 s, recover FOV in 0.55 s. The shot lasts until the executor finishes,
+  including extra time spent waiting at a blocked ledge.
+- During either shot the composer aims at the moving player. Mouse input
+  updates the eventual orbit. Recovery tracks that orbit even if the player
+  runs away; another traversal starts from the current visible position.
+- TicTac and Wall Rebound share Launch Shot. A successful launch holds the
+  entry position for 0.15 s, then arcs behind the outgoing movement direction
+  over 0.50 s with a 4 m lift. FOV widens by 5 degrees from launch. The
+  camera stays behind the player for 0.20 s before returning over 1.50 s.
+  FOV recovers in 1 s. A new launch restarts the shot from the visible pose.
+- Pole Shot orbits the executor's pole centre and aims at the composer's
+  usual height above it. The default lift is 5 m with +5 degrees FOV over
+  0.50 s. Pole Turn Fraction follows 25% of the player's actual angular
+  travel, capped by Pole Max Degrees Per Second (60). Releasing the pole or
+  exhausting spin stamina starts the 1.50 s return and 1 s FOV recovery.
+- The shared launch and pole shots return along an arc to the live mouse orbit.
+- Vault Shot and Climb Shot in the Inspector control those defaults per rig.
+  Traversal Position Intensity scales both hold and lift. At 0.5 the camera
+  follows half the orbit displacement; at zero it follows normally.
+  Dynamic Fov Intensity controls all FOV effects. Set all four intensities
+  to zero to disable movement feedback.
+- Defaults are starting values proposed for this project, not copied game
+  constants. Vertical FOV is additive to the authored lens (currently 60).
+- TraversalOrbitalFollow is the rig's position component. It runs the usual
+  Cinemachine orbit and applies the shot before Deoccluder and RotationComposer.
+  Deoccluder can pull a held camera forward to keep sight of the actor.
+- Follow must resolve to a PlayerMovementIntent. Switching to an AI target
+  applies no player feedback. Disable/rebind/warp clears transient state.
+  On respawn notify Cinemachine with OnTargetObjectWarped; ResetFeedback is
+  also available for explicit cuts. Large discontinuities reset sampling.
+
+Collision
+- TraversalDeoccluder runs Cinemachine's obstruction checks from the framed
+  focus. A lone active pole is transparent along that sightline. Walls are
+  checked across the full distance. Other poles on the sightline and camera
+  contact with the pole use the rig's normal collision policy.
+- Included layers: Default, Parkour, walkableSurface, poleLayer,
+  wallRebound, buildings. Entity is excluded; trigger tokens are ignored
+  by Cinemachine physics queries. Set environment colliders to these layers.
+- Pull forward immediately when obstructed, recover in 0.20 s, radius 0.4.
+- Keep focus/target offsets purely vertical so actor yaw cannot rotate them.
+
+Verification
+- Editor Test Runner: MovementCameraTests in Scripts/0_Dummy/Editor
+  (EditMode suite enters Play Mode).
+- The integration fixture clones the actual Gameplay player and camera into
+  an isolated physics arena and exercises real keyboard/mouse input.
+- Save work before running. The suite refuses unsaved scenes and restores
+  the saved scene setup after each check.
+- Manually tune framing in the full arena with sprint, slide under bars,
+  jumping, vault/climb, wall rebound, pole spin, tokens and camera corners.
+  The fixture verifies behavior; it does not establish final gameplay feel.
+
+Design references
+- Apex: restrained sprint feedback; EA recommends minimal sprint view shake.
+  https://help.ea.com/en/articles/apex-legends/best-settings-pc/
+- Rainbow Six: independent visual intensity/comfort controls.
+  https://news.ubisoft.com/en-us/article/r2MFilRathMnz0nZ3zosN/rainbow-six-siege-accessibility-spotlight
+- Deadlock is a third-person movement/framing reference only; no claim that
+  these parameters reproduce its internal camera implementation.
+- Cinemachine APIs were checked against installed 3.1.5 package source.

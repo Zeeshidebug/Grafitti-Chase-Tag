@@ -36,6 +36,7 @@ public class PoleSpinEvaluator : MonoBehaviour
 
         candidate.PolePosition =
             pole.HitPoint;
+        candidate.PoleCollider = pole.ObstacleCollider;
 
         candidate.PoleNormal =
             pole.SurfaceNormal;

@@ -19,6 +19,7 @@ public class WallReboundExecutor : MonoBehaviour
     private float reboundTimer;
 
     public bool IsExecuting { get; private set; }
+    public uint LaunchCount { get; private set; }
 
     public Vector3 CurrentReboundDirection
     {
@@ -108,6 +109,7 @@ public class WallReboundExecutor : MonoBehaviour
         );
 
         IsExecuting = true;
+        LaunchCount++;
 
         reboundTimer = reboundDuration;
 
