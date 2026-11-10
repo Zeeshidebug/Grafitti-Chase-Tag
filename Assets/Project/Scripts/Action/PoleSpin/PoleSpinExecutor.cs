@@ -56,7 +56,7 @@ public class PoleSpinExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!IsExecuting)
+        if (!IsExecuting || GameplayPauseController.IsPaused)
             return;
 
         ExecuteSpin();

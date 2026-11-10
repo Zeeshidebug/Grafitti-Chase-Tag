@@ -15,7 +15,8 @@ public class PoleSpinController : MonoBehaviour
 
     private void Update()
     {
-        TryPoleSpin();
+        if (!GameplayPauseController.IsPaused)
+            TryPoleSpin();
     }
 
     private void TryPoleSpin()

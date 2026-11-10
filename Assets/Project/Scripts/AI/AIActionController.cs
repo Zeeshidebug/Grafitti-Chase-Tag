@@ -105,6 +105,9 @@ public class AIActionController : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         if (vaultExecutor.IsExecuting ||
             slideExecutor.IsExecuting ||
             climbExecutor.IsExecuting)

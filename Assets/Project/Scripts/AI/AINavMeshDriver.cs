@@ -107,6 +107,9 @@ public class AINavMeshDriver : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         // Planning continues while an executor owns physical movement.
         UpdateNavigationPath();
 

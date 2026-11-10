@@ -49,7 +49,8 @@ public class TaggingController : MonoBehaviour
 
     public bool TryTag()
     {
-        if (!roleController.IsChaser || IsOnCooldown || (ownReceiver != null && !ownReceiver.RoundIsPlaying))
+        if (GameplayPauseController.IsPaused || !roleController.IsChaser || IsOnCooldown ||
+            (ownReceiver != null && !ownReceiver.RoundIsPlaying))
             return false;
 
         if (proximityTarget != null)

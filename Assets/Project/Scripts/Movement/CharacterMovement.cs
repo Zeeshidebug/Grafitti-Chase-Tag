@@ -118,6 +118,9 @@ public class CharacterMovement : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         if (characterState.CurrentState == LocomotionState.Vaulting ||
             characterState.CurrentState == LocomotionState.Climbing)
         {

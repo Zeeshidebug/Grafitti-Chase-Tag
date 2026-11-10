@@ -15,6 +15,9 @@ public class PlayerInputHandler : MonoBehaviour
 
     private InputSystem_Actions inputActions;
 
+    public bool PausePressed => inputActions.Player.Pause.WasPressedThisFrame();
+    public bool FreeCursorHeld => inputActions.Player.FreeCursor.IsPressed();
+
     private void Awake()
     {
         inputActions = new InputSystem_Actions();
@@ -30,16 +33,24 @@ public class PlayerInputHandler : MonoBehaviour
         inputActions.Disable();
     }
 
+    private void OnDestroy()
+    {
+        inputActions.Dispose();
+    }
+
     private void Update()
     {
-        MoveInput = inputActions.Player.Move.ReadValue<Vector2>();
-        SprintHeld = inputActions.Player.Sprint.IsPressed();
-        JumpPressed = inputActions.Player.Jump.WasPressedThisFrame();
+        var player = inputActions.Player;
+        bool playing = !GameplayPauseController.IsPaused;
+        bool canInteract = playing && !FreeCursorHeld;
+        MoveInput = playing ? player.Move.ReadValue<Vector2>() : Vector2.zero;
+        SprintHeld = playing && player.Sprint.IsPressed();
+        JumpPressed = playing && player.Jump.WasPressedThisFrame();
         DebugLog = inputActions.Player.DebugMenu.WasPressedThisFrame();
         DebugNext = inputActions.Player.DebugNext.WasPressedThisFrame();
         DebugPrevious = inputActions.Player.DebugPrevious.WasPressedThisFrame();
-        Interaction = inputActions.Player.Interaction.WasPressedThisFrame();
-        InteractionHeld = inputActions.Player.Interaction.IsPressed();
-        IsTagging = inputActions.Player.Tagging.WasPressedThisFrame();
+        Interaction = canInteract && player.Interaction.WasPressedThisFrame();
+        InteractionHeld = canInteract && player.Interaction.IsPressed();
+        IsTagging = canInteract && player.Tagging.WasPressedThisFrame();
     }
 }

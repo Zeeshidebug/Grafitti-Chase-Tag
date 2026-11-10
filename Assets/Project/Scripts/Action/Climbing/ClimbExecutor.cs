@@ -109,7 +109,7 @@ public class ClimbExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!isExecuting)
+        if (!isExecuting || GameplayPauseController.IsPaused)
             return;
 
         ExecuteClimb();

@@ -70,7 +70,7 @@ public class RoundOutcomeVFX : MonoBehaviour
 
         while (elapsed < entranceDuration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / entranceDuration);
             float eased = EaseOutCubic(t);
@@ -93,7 +93,7 @@ public class RoundOutcomeVFX : MonoBehaviour
 
         while (elapsed < settleDuration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / settleDuration);
             float eased = EaseOutCubic(t);
@@ -116,7 +116,7 @@ public class RoundOutcomeVFX : MonoBehaviour
 
         while (elapsed < shakeDuration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / shakeDuration);
             float strength = 1f - t;

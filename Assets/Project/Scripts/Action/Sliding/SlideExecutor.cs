@@ -209,7 +209,7 @@ public class SlideExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!isExecuting)
+        if (!isExecuting || GameplayPauseController.IsPaused)
             return;
 
         elapsedTime += Time.deltaTime;

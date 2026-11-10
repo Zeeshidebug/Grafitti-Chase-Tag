@@ -23,7 +23,7 @@ public class RoundController : MonoBehaviour
 
     private void Update()
     {
-        if (currentState != RoundState.Playing)
+        if (currentState != RoundState.Playing || GameplayPauseController.IsPaused)
             return;
 
         remainingTime -= Time.deltaTime;

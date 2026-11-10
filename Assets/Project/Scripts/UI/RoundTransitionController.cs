@@ -145,7 +145,7 @@ public class RoundTransitionController : MonoBehaviour
 
         while (elapsed < wipeDuration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / wipeDuration);
             t = Mathf.SmoothStep(0f, 1f, t);
@@ -177,7 +177,7 @@ public class RoundTransitionController : MonoBehaviour
 
         while (elapsed < duration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / duration);
             float easedT = 1f - Mathf.Pow(1f - t, 3f);
@@ -201,7 +201,7 @@ public class RoundTransitionController : MonoBehaviour
 
         while (elapsed < duration)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
             yield return null;
         }
     }

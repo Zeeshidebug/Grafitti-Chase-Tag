@@ -278,6 +278,9 @@ public class UtilityAIController : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         // Keep decision ticks running while parkour owns physical movement.
         // Preserve the current sprint choice during an airborne/action phase.
         if (characterState == null ||

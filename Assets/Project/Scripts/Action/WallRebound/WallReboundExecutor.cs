@@ -35,7 +35,7 @@ public class WallReboundExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!IsExecuting)
+        if (!IsExecuting || GameplayPauseController.IsPaused)
             return;
 
         reboundTimer -= Time.deltaTime;
