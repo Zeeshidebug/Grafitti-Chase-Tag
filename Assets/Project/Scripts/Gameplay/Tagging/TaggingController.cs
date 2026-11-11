@@ -19,7 +19,29 @@ public class TaggingController : MonoBehaviour
     [SerializeField] private float sprayAngle = 45f;
     [SerializeField] private LayerMask targetLayer;
 
+    [Tooltip("Assign the opposing receiver to request a tag automatically within Spray Range.")]
+    [SerializeField] private TagReceiver proximityTarget;
+
+    private TagReceiver ownReceiver;
+    private RoleController proximityTargetRole;
     private float cooldownTimer;
+
+    private float EffectiveRange =>
+        sprayRange *
+        buffNerfController.GetStatMultiplier(
+            StatType.TagSprayRange
+        );
+
+    private void Awake()
+    {
+        ownReceiver = GetComponent<TagReceiver>();
+
+        if (proximityTarget != null)
+        {
+            proximityTargetRole =
+                proximityTarget.GetComponent<RoleController>();
+        }
+    }
 
     public bool IsOnCooldown =>
         cooldownTimer > 0f;
@@ -36,49 +58,83 @@ public class TaggingController : MonoBehaviour
 
     public bool TryTag()
     {
-        // Cek apakah input tagging terdeteksi.
-        if (movementIntent.Tagging)
+        // Check pause, role, cooldown, and round state.
+        if (GameplayPauseController.IsPaused ||
+            !roleController.IsChaser ||
+            IsOnCooldown ||
+            (ownReceiver != null && !ownReceiver.RoundIsPlaying))
         {
-            Debug.Log("TAGGING INPUT TERDETEKSI!");
+            return false;
         }
 
-        if (!movementIntent.Tagging)
-            return false;
+        // Check proximity target if assigned.
+        if (proximityTarget != null)
+        {
+            if (!proximityTarget.isActiveAndEnabled ||
+                proximityTargetRole == null ||
+                !proximityTargetRole.IsEvader)
+            {
+                return false;
+            }
 
-        if (!roleController.IsChaser)
-            return false;
+            float range = EffectiveRange;
 
-        if (IsOnCooldown)
+            if ((targetLayer.value &
+                 (1 << proximityTarget.gameObject.layer)) == 0 ||
+                (proximityTarget.transform.position - transform.position)
+                    .sqrMagnitude > range * range)
+            {
+                return false;
+            }
+        }
+        // Otherwise, use manual tagging input.
+        else if (movementIntent == null || !movementIntent.Tagging)
+        {
             return false;
+        }
 
+        // Calculate Tag Spray Range multiplier.
+        float rangeMultiplier =
+            buffNerfController.GetStatMultiplier(
+                StatType.TagSprayRange
+            );
+
+        // Calculate stamina cost.
         float staminaCost =
             staminaSystem.MaxStamina *
             staminaCostMultiplier;
 
         if (!staminaSystem.TryConsume(staminaCost))
         {
-            staminaHUDController.NotifyInsufficientStamina();
+            staminaHUDController?.NotifyInsufficientStamina();
             return false;
         }
 
         cooldownTimer = cooldownDuration;
 
-        // Ambil multiplier Tag Spray Range.
-        float rangeMultiplier =
-            buffNerfController.GetStatMultiplier(
-                StatType.TagSprayRange
+        // Execute only one tagging method.
+        if (proximityTarget != null)
+        {
+            proximityTarget.ReceiveTag();
+        }
+        else
+        {
+            PerformTagSpray(rangeMultiplier);
+        }
+
+        // Play tagging animation.
+        if (animator != null)
+        {
+            animator.SetTrigger("Tagging");
+        }
+
+        // Play tagging VFX based on range multiplier.
+        if (taggingVFXController != null)
+        {
+            taggingVFXController.PlaySprayEffect(
+                rangeMultiplier
             );
-
-        // Jalankan logika tagging.
-        PerformTagSpray(rangeMultiplier);
-
-        // Jalankan animasi tagging.
-        animator.SetTrigger("Tagging");
-
-        // Jalankan VFX sesuai multiplier.
-        taggingVFXController.PlaySprayEffect(
-            rangeMultiplier
-        );
+        }
 
         return true;
     }

@@ -224,8 +224,11 @@ public class StaminaHUDController : MonoBehaviour
         if (exhaustedRoutine != null)
             StopCoroutine(exhaustedRoutine);
 
-        staminaBarTransform.anchoredPosition = originalBarPosition;
-        staminaBar.color = normalColor;
-        warningText.color = Color.white;
+        if (staminaBarTransform != null)
+            staminaBarTransform.anchoredPosition = originalBarPosition;
+        if (staminaBar != null)
+            staminaBar.color = normalColor;
+        if (warningText != null)
+            warningText.color = Color.white;
     }
 }

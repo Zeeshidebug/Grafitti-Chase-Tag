@@ -16,21 +16,19 @@ public class ParkourDetector : MonoBehaviour
     [SerializeField] private LayerMask wallReboundLayer;
 
     private CharacterController characterController;
+    private Collider[] poleOverlaps = new Collider[8];
+
+    // Optional direction override for AI/local path-aware detection.
+    private Vector3 obstacleDetectionDirection;
+    private bool hasCustomObstacleDetectionDirection;
 
     public ParkourObstacleData CurrentObstacle { get; private set; }
     public ParkourObstacleData CurrentPole { get; private set; }
     public ParkourObstacleData CurrentWallReboundSurface { get; private set; }
 
-    public bool PoleDetected =>
-        CurrentPole != null &&
-        CurrentPole.IsValid;
-
-    public bool ObstacleDetected =>
-        CurrentObstacle != null &&
-        CurrentObstacle.IsValid;
-
-    public float ObstacleHeight =>
-        CurrentObstacle?.Height ?? 0f;
+    public bool PoleDetected => CurrentPole != null && CurrentPole.IsValid;
+    public bool ObstacleDetected => CurrentObstacle != null && CurrentObstacle.IsValid;
+    public LayerMask ParkourLayer => parkourLayer;
 
     private void Awake()
     {
@@ -39,80 +37,95 @@ public class ParkourDetector : MonoBehaviour
 
     private void Update()
     {
-        DetectObstacle();
+        Vector3 direction = hasCustomObstacleDetectionDirection
+            ? obstacleDetectionDirection
+            : transform.forward;
+
+        DetectObstacle(direction);
         DetectPole();
         DetectWallReboundSurface();
-
     }
 
-    private void DetectObstacle()
+    public void SetObstacleDetectionDirection(Vector3 direction)
     {
-        GetCapsulePoints(
-            out Vector3 point1,
-            out Vector3 point2,
-            out float radius
-        );
+        direction.y = 0f;
 
-        bool hitObstacle = Physics.CapsuleCast(
-            point1,
-            point2,
-            radius,
-            transform.forward,
-            out RaycastHit hit,
-            detectionDistance,
-            parkourLayer
-        );
+        if (direction.sqrMagnitude <= 0.001f)
+        {
+            ClearObstacleDetectionDirection();
+            return;
+        }
 
-        if (!hitObstacle)
+        obstacleDetectionDirection = direction.normalized;
+        hasCustomObstacleDetectionDirection = true;
+    }
+
+    public void ClearObstacleDetectionDirection()
+    {
+        obstacleDetectionDirection = Vector3.zero;
+        hasCustomObstacleDetectionDirection = false;
+    }
+
+    private void DetectObstacle(Vector3 direction)
+    {
+        direction.y = 0f;
+
+        if (!TryCastSurface(direction, parkourLayer, out ParkourObstacleData obstacle))
         {
             CurrentObstacle = null;
             return;
         }
 
-        CurrentObstacle = new ParkourObstacleData
+        CurrentObstacle = obstacle;
+        FindTopSurface(CurrentObstacle);
+    }
+
+    private bool TryCastSurface(
+        Vector3 direction,
+        LayerMask layerMask,
+        out ParkourObstacleData obstacle)
+    {
+        obstacle = null;
+        if (direction.sqrMagnitude <= 0.001f)
+            return false;
+
+        direction.Normalize();
+        Vector3 capsuleCenter = transform.TransformPoint(characterController.center);
+        CharacterControllerGeometry.GetCapsulePoints(
+            characterController,
+            capsuleCenter,
+            out Vector3 point1,
+            out Vector3 point2,
+            out float radius);
+
+        if (!Physics.CapsuleCast(
+                point1,
+                point2,
+                radius,
+                direction,
+                out RaycastHit hit,
+                detectionDistance,
+                layerMask,
+                QueryTriggerInteraction.Ignore))
+        {
+            return false;
+        }
+
+        obstacle = new ParkourObstacleData
         {
             IsValid = true,
             HitPoint = hit.point,
             SurfaceNormal = hit.normal,
-            Distance = hit.distance
+            Distance = hit.distance,
+            ObstacleCollider = hit.collider,
+            ObstacleBounds = hit.collider != null ? hit.collider.bounds : new Bounds(),
+            HasObstacleBounds = hit.collider != null
         };
 
-        FindTopSurface(CurrentObstacle);
+        return true;
     }
 
-    private void GetCapsulePoints(
-        out Vector3 point1,
-        out Vector3 point2,
-        out float radius
-    )
-    {
-        radius = characterController.radius;
-
-        Vector3 center =
-            transform.position +
-            characterController.center;
-
-        float height =
-            Mathf.Max(
-                characterController.height,
-                radius * 2f
-            );
-
-        float cylinderHeight =
-            height - radius * 2f;
-
-        point1 =
-            center +
-            Vector3.up * (cylinderHeight * 0.5f);
-
-        point2 =
-            center -
-            Vector3.up * (cylinderHeight * 0.5f);
-    }
-
-    private void FindTopSurface(
-        ParkourObstacleData obstacle
-    )
+    private void FindTopSurface(ParkourObstacleData obstacle)
     {
         Vector3 topOrigin =
             obstacle.HitPoint
@@ -120,11 +133,12 @@ public class ParkourDetector : MonoBehaviour
             + Vector3.up * maxObstacleHeight;
 
         if (!Physics.Raycast(
-            topOrigin,
-            Vector3.down,
-            out RaycastHit topHit,
-            maxObstacleHeight,
-            parkourLayer))
+                topOrigin,
+                Vector3.down,
+                out RaycastHit topHit,
+                maxObstacleHeight,
+                parkourLayer,
+                QueryTriggerInteraction.Ignore))
         {
             obstacle.IsValid = false;
             return;
@@ -132,21 +146,38 @@ public class ParkourDetector : MonoBehaviour
 
         obstacle.TopPosition = topHit.point;
 
-        obstacle.Height =
-            topHit.point.y -
-            transform.position.y;
+        // Measure obstacle height from the CharacterController's bottom,
+        // rather than from the GameObject pivot.
+        Vector3 worldBottom = transform.position
+            + CharacterControllerGeometry.GetWorldBottomOffset(characterController);
+
+        obstacle.Height = topHit.point.y - worldBottom.y;
     }
 
     private void DetectPole()
     {
-        Collider[] colliders =
-            Physics.OverlapSphere(
+        int overlapCount = Physics.OverlapSphereNonAlloc(
+            transform.position,
+            poleDetectionRadius,
+            poleOverlaps,
+            poleLayer,
+            QueryTriggerInteraction.Ignore);
+
+        if (overlapCount == poleOverlaps.Length)
+        {
+            // A full buffer may omit the closest pole. Keep all hits and grow
+            // the retained buffer so dense areas do not allocate every frame.
+            Collider[] allOverlaps = Physics.OverlapSphere(
                 transform.position,
                 poleDetectionRadius,
-                poleLayer
-            );
+                poleLayer,
+                QueryTriggerInteraction.Ignore);
+            poleOverlaps = new Collider[Mathf.Max(poleOverlaps.Length * 2, allOverlaps.Length + 1)];
+            System.Array.Copy(allOverlaps, poleOverlaps, allOverlaps.Length);
+            overlapCount = allOverlaps.Length;
+        }
 
-        if (colliders.Length == 0)
+        if (overlapCount == 0)
         {
             CurrentPole = null;
             return;
@@ -155,16 +186,12 @@ public class ParkourDetector : MonoBehaviour
         Collider closestCollider = null;
         float closestDistance = float.MaxValue;
 
-        foreach (Collider collider in colliders)
+        for (int i = 0; i < overlapCount; i++)
         {
-            Vector3 closestPoint =
-                collider.ClosestPoint(transform.position);
-
-            float distance =
-                Vector3.Distance(
-                    transform.position,
-                    closestPoint
-                );
+            Collider collider = poleOverlaps[i];
+            poleOverlaps[i] = null;
+            Vector3 closestPoint = collider.ClosestPoint(transform.position);
+            float distance = Vector3.Distance(transform.position, closestPoint);
 
             if (distance < closestDistance)
             {
@@ -179,12 +206,8 @@ public class ParkourDetector : MonoBehaviour
             return;
         }
 
-        Vector3 poleCenter =
-            closestCollider.bounds.center;
-
-        Vector3 radialDirection =
-            transform.position - poleCenter;
-
+        Vector3 poleCenter = closestCollider.bounds.center;
+        Vector3 radialDirection = transform.position - poleCenter;
         radialDirection.y = 0f;
 
         if (radialDirection.sqrMagnitude <= 0.001f)
@@ -198,62 +221,25 @@ public class ParkourDetector : MonoBehaviour
         CurrentPole = new ParkourObstacleData
         {
             IsValid = true,
-
-            // Axis point at character height.
             HitPoint = new Vector3(
                 poleCenter.x,
                 transform.position.y,
-                poleCenter.z
-            ),
-
+                poleCenter.z),
             SurfaceNormal = radialDirection,
-
-            Distance = closestDistance
+            Distance = closestDistance,
+            ObstacleCollider = closestCollider,
+            ObstacleBounds = closestCollider.bounds,
+            HasObstacleBounds = true
         };
     }
 
     private void DetectWallReboundSurface()
     {
-        GetCapsulePoints(
-            out Vector3 point1,
-            out Vector3 point2,
-            out float radius
-        );
-
-        bool hitWall = Physics.CapsuleCast(
-            point1,
-            point2,
-            radius,
+        CurrentWallReboundSurface = TryCastSurface(
             transform.forward,
-            out RaycastHit hit,
-            detectionDistance,
-            wallReboundLayer
-        );
-
-        if (!hitWall)
-        {
-            CurrentWallReboundSurface = null;
-            return;
-        }
-
-        CurrentWallReboundSurface = new ParkourObstacleData
-        {
-            IsValid = true,
-            HitPoint = hit.point,
-            SurfaceNormal = hit.normal,
-            Distance = hit.distance
-        };
+            wallReboundLayer,
+            out ParkourObstacleData surface)
+                ? surface
+                : null;
     }
-
-    // private void OnDrawGizmosSelected()
-    // {
-    //     Vector3 origin =
-    //         transform.position +
-    //         Vector3.up * detectionHeight;
-
-    //     Gizmos.DrawRay(
-    //         origin,
-    //         transform.forward * detectionDistance
-    //     );
-    // }
 }

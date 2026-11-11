@@ -112,3 +112,10 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# MD files are often used for documentation and may not be necessary to include in version control, depending on your project's needs.
+/[Aa]gent/
+*.md
+
+# Unity Recovery Files
+Assets/_Recovery/

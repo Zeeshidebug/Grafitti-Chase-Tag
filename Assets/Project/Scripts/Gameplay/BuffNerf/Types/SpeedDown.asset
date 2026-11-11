@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SpeedDown
   m_EditorClassIdentifier: Assembly-CSharp::BuffNerfEffect
   effectID: SpeedDown
-  iconSprite: {fileID: 21300000, guid: e3ecab10dd6a5b94099f42498604998d, type: 3}
+  iconSprite: {fileID: 21300000, guid: 1200ba7a5fc4f05418267b9ed5bfcd86, type: 3}
   effectType: 1
   statType: 0
   multiplier: 0.8

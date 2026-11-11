@@ -1,13 +1,15 @@
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerInputHandler))]
-public class PlayerMovementIntent : MonoBehaviour
+[DefaultExecutionOrder(-100)]
+public class PlayerMovementIntent : MonoBehaviour, ICharacterMovementIntent
 {
     [Header("References")]
+    [Tooltip("Rendered camera, used only to read the movement basis. Cinemachine owns look input.")]
     [SerializeField] private Transform cameraTransform;
 
     [Header("Facing")]
-    [SerializeField] private float facingChangeDelay = 0.35f;
+    [SerializeField, Min(0f)] private float facingChangeDelay = 0.35f;
 
     public Vector3 MovementDirection { get; private set; }
     public Vector3 FacingDirection { get; private set; }
@@ -19,10 +21,28 @@ public class PlayerMovementIntent : MonoBehaviour
 
     private PlayerInputHandler inputHandler;
     private float facingChangeTimer;
+    private Vector3 lastCameraForward;
 
     private void Awake()
     {
         inputHandler = GetComponent<PlayerInputHandler>();
+        FacingDirection = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+        if (FacingDirection.sqrMagnitude < 0.001f)
+            FacingDirection = Vector3.forward;
+        lastCameraForward = FacingDirection;
+
+        if (cameraTransform == null && Camera.main != null)
+            cameraTransform = Camera.main.transform;
+
+        if (cameraTransform == null)
+            Debug.LogWarning("PlayerMovementIntent has no camera; using character-relative movement.", this);
+    }
+
+    public void OnSpawn(Vector3 positionDelta)
+    {
+        Unity.Cinemachine.CinemachineCore.OnTargetObjectWarped(transform, positionDelta);
+        FacingDirection = transform.forward;
+        facingChangeTimer = 0f;
     }
 
     private void Update()
@@ -43,14 +63,15 @@ public class PlayerMovementIntent : MonoBehaviour
         JumpPressed = inputHandler.JumpPressed;
         Tagging = inputHandler.IsTagging;
 
-        Vector3 forward = cameraTransform.forward;
-        Vector3 right = cameraTransform.right;
-
-        forward.y = 0f;
-        right.y = 0f;
-
-        forward.Normalize();
-        right.Normalize();
+        // Reading the camera basis does not rotate it. Keep the last valid yaw
+        // when looking straight up/down, and build an orthogonal planar basis.
+        Vector3 forward = Vector3.ProjectOnPlane(
+            cameraTransform != null ? cameraTransform.forward : transform.forward,
+            Vector3.up);
+        if (forward.sqrMagnitude > 0.001f)
+            lastCameraForward = forward.normalized;
+        forward = lastCameraForward;
+        Vector3 right = Vector3.Cross(Vector3.up, forward);
 
         MovementDirection =
             forward * input.y +
@@ -112,4 +133,6 @@ public class PlayerMovementIntent : MonoBehaviour
             );
         }
     }
+
+
 }

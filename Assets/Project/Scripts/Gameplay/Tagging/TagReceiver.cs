@@ -9,9 +9,16 @@ public class TagReceiver : MonoBehaviour
     [Header("Tag VFX")]
     [SerializeField] private ParticleSystem tagSmokeMain;
 
+    public bool RoundIsPlaying =>
+        roundController != null &&
+        roundController.CurrentState == RoundState.Playing;
+
     public void ReceiveTag()
     {
-        // Play tag smoke effect
+        if (!RoundIsPlaying)
+            return;
+
+        // Play tag smoke effectg
         if (tagSmokeMain != null)
         {
             tagSmokeMain.Play(true);

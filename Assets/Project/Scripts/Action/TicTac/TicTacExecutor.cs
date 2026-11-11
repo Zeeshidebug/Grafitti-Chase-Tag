@@ -14,6 +14,7 @@ public class TicTacExecutor : MonoBehaviour
     [SerializeField] private float verticalLaunchVelocity = 7f;
 
     public bool IsExecuting { get; private set; }
+    public uint LaunchCount { get; private set; }
 
     private bool hasLeftGround;
 
@@ -31,7 +32,7 @@ public class TicTacExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!IsExecuting)
+        if (!IsExecuting || GameplayPauseController.IsPaused)
             return;
 
         if (characterState.CurrentState != LocomotionState.Grounded)
@@ -80,6 +81,7 @@ public class TicTacExecutor : MonoBehaviour
         );
 
         IsExecuting = true;
+        LaunchCount++;
         hasLeftGround = false;
 
         characterState.SetState(

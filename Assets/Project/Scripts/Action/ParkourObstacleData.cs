@@ -8,8 +8,12 @@ public class ParkourObstacleData
     public Vector3 SurfaceNormal { get; set; }
     public Vector3 TopPosition { get; set; }
 
-    public Vector3 LandingPosition { get; set; }
-    public Vector3 LandingNormal { get; set; }
+    // The collider and world-space bounds hit by ParkourDetector.
+    // Bounds are used to estimate the obstacle's full footprint along
+    // the current vault direction, not just its front-facing top point.
+    public Collider ObstacleCollider { get; set; }
+    public Bounds ObstacleBounds { get; set; }
+    public bool HasObstacleBounds { get; set; }
 
     public float Distance { get; set; }
     public float Height { get; set; }

@@ -2,7 +2,6 @@ using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(CharacterState))]
-[RequireComponent(typeof(PlayerInputHandler))]
 public class CharacterMovement : MonoBehaviour
 {
     [Header("References")]
@@ -29,8 +28,7 @@ public class CharacterMovement : MonoBehaviour
     [SerializeField] private float releaseMomentumDecay = 5f;
 
     private CharacterController characterController;
-    private PlayerMovementIntent movementIntent;
-    private PlayerInputHandler inputHandler;
+    private ICharacterMovementIntent movementIntent;
     private CharacterState characterState;
     private StaminaSystem staminaSystem;
     private SlideExecutor slideExecutor;
@@ -44,18 +42,17 @@ public class CharacterMovement : MonoBehaviour
 
     public float CurrentSpeed => currentSpeed;
     public float SprintSpeed => sprintSpeed;
+    public float JumpHeight => jumpHeight;
     public Vector3 CurrentVelocity { get; private set; }
     public float VerticalVelocity => verticalVelocity;
     private Vector3 releaseMomentum;
     private bool jumpAnimationActive;
     private bool hasLeftGround;
-    // private float StrafeAmount;
 
     private void Awake()
     {
         characterController = GetComponent<CharacterController>();
-        movementIntent = GetComponent<PlayerMovementIntent>();
-        inputHandler = GetComponent<PlayerInputHandler>();
+        movementIntent = GetComponent<ICharacterMovementIntent>();
         currentSpeed = moveSpeed;
         characterState = GetComponent<CharacterState>();
         staminaSystem = GetComponent<StaminaSystem>();
@@ -64,10 +61,72 @@ public class CharacterMovement : MonoBehaviour
         wallReboundExecutor = GetComponent<WallReboundExecutor>();
         ticTacExecutor = GetComponent<TicTacExecutor>();
         buffNerfController = GetComponent<BuffNerfController>();
+
+        if (movementIntent == null)
+        {
+            Debug.LogError(
+                "CharacterMovement requires a component " +
+                "implementing ICharacterMovementIntent.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+    }
+
+    public void SpawnAt(Transform marker)
+    {
+        GetComponent<VaultExecutor>()?.CancelForSpawn();
+        GetComponent<ClimbExecutor>()?.CancelForSpawn();
+        slideExecutor?.CancelForSpawn();
+        if (poleSpinExecutor != null && poleSpinExecutor.IsExecuting)
+            poleSpinExecutor.FinishSpin();
+        if (wallReboundExecutor != null && wallReboundExecutor.IsExecuting)
+            wallReboundExecutor.FinishRebound();
+        if (ticTacExecutor != null && ticTacExecutor.IsExecuting)
+            ticTacExecutor.FinishTicTac();
+
+        currentSpeed = moveSpeed;
+        verticalVelocity = 0f;
+        CurrentVelocity = Vector3.zero;
+        releaseMomentum = Vector3.zero;
+        trackingFall = false;
+        jumpAnimationActive = false;
+        hasLeftGround = false;
+        characterState.SetState(LocomotionState.Grounded);
+
+        Vector3 previousPosition = transform.position;
+        characterController.enabled = false;
+        transform.rotation = marker.rotation;
+        // Markers can sit slightly above the floor. Land the standing capsule
+        // and the navigation proxy on the same surface.
+        Vector3 feet = marker.position;
+        float probeLift = characterController.skinWidth + 0.1f;
+        int groundMask = Physics.DefaultRaycastLayers & ~(1 << gameObject.layer);
+        if (Physics.Raycast(feet + Vector3.up * probeLift, Vector3.down, out RaycastHit ground,
+            characterController.height + probeLift, groundMask, QueryTriggerInteraction.Ignore))
+            feet = ground.point;
+
+        transform.position = feet - CharacterControllerGeometry.GetWorldBottomOffset(characterController);
+        GetComponent<AIActionController>()?.ResetForSpawn();
+        GetComponent<UtilityAIController>()?.ResetForSpawn();
+        GetComponent<AINavMeshDriver>()?.ResetForSpawn(feet);
+        GetComponent<PlayerMovementIntent>()?.OnSpawn(transform.position - previousPosition);
+        characterController.enabled = true;
     }
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
+        if (characterState.CurrentState == LocomotionState.Vaulting ||
+            characterState.CurrentState == LocomotionState.Climbing)
+        {
+            return;
+        }
+
         UpdateLocomotionState();
 
         HandleMovement();
@@ -187,28 +246,11 @@ public class CharacterMovement : MonoBehaviour
             verticalVelocity = -2f;
         }
 
-        if (inputHandler.JumpPressed &&
+        if (movementIntent.JumpPressed &&
             characterState.CurrentState == LocomotionState.Grounded)
         {
-            float staminaCost =
-                staminaSystem.MaxStamina * jumpStaminaCostRate;
-
-            if (!staminaSystem.TryConsume(staminaCost))
-            {
-                staminaHUDController.NotifyInsufficientStamina();
+            if (!TryJump())
                 return;
-            }
-
-
-            verticalVelocity =
-                Mathf.Sqrt(
-                    jumpHeight * -2f * gravity
-                );
-
-            jumpAnimationActive = true;
-            hasLeftGround = false;
-
-            animator.SetTrigger("JumpIn");
         }
 
         verticalVelocity += gravity * Time.deltaTime;
@@ -327,6 +369,34 @@ public class CharacterMovement : MonoBehaviour
     }
 
     // Additional methods
+    public bool TryJump()
+    {
+        if (characterState.CurrentState != LocomotionState.Grounded ||
+            staminaSystem == null)
+        {
+            return false;
+        }
+
+        float staminaCost =
+            staminaSystem.MaxStamina * jumpStaminaCostRate;
+
+        if (!staminaSystem.TryConsume(staminaCost))
+        {
+            if (staminaHUDController != null)
+                staminaHUDController.NotifyInsufficientStamina();
+            return false;
+        }
+
+        verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        jumpAnimationActive = true;
+        hasLeftGround = false;
+
+        if (animator != null)
+            animator.SetTrigger("JumpIn");
+
+        return true;
+    }
+
     public void ApplyReleaseMomentum(Vector3 momentum)
     {
         releaseMomentum =
