@@ -527,6 +527,11 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Space(4f);
         GUILayout.Label("TOKEN AWARENESS");
         GUILayout.Label("------------------------------");
+        if (aiController == null)
+        {
+            GUILayout.Label("AI Controller: Not Assigned");
+            return;
+        }
         GUILayout.Label(
             $"Scanned: {aiController.DebugTokenScannedCount} | " +
             $"Viable: {aiController.DebugTokenViableCount}");
