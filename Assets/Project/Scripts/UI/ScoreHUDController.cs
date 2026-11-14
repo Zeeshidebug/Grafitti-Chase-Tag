@@ -1,6 +1,7 @@
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ScoreHUDController : MonoBehaviour
 {
@@ -25,6 +26,11 @@ public class ScoreHUDController : MonoBehaviour
     [SerializeField] private Color chaserColor = Color.red;
     [SerializeField] private Color evaderColor = Color.cyan;
 
+    [Header("Role Artwork")]
+    [SerializeField] private Image playerRoleBackground;
+    [SerializeField] private Image enemyRoleBackground;
+    [SerializeField] private Sprite leftChaser, leftEvader, rightChaser, rightEvader;
+
     private void Update()
     {
         UpdateScores();
@@ -40,8 +46,19 @@ public class ScoreHUDController : MonoBehaviour
 
     private void UpdateRoles()
     {
-        UpdateRoleDisplay(playerRoleController, playerRoleText);
-        UpdateRoleDisplay(aiRoleController, enemyRoleText);
+        if (playerRoleBackground != null)
+        {
+            playerRoleBackground.sprite = playerRoleController.IsChaser ? leftChaser : leftEvader;
+            enemyRoleBackground.sprite = aiRoleController.IsChaser ? rightChaser : rightEvader;
+            playerRoleText.text = playerRoleController.IsChaser ? "CHASER" : "EVADER";
+            enemyRoleText.text = aiRoleController.IsChaser ? "CHASER" : "EVADER";
+            playerRoleText.color = enemyRoleText.color = Color.white;
+        }
+        else
+        {
+            UpdateRoleDisplay(playerRoleController, playerRoleText);
+            UpdateRoleDisplay(aiRoleController, enemyRoleText);
+        }
     }
 
     private void UpdateRoleDisplay(

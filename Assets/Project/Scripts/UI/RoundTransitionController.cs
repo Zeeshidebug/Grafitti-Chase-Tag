@@ -9,6 +9,7 @@ public class RoundTransitionController : MonoBehaviour
     [SerializeField] private RoundOutcomeVFX roundOutcomeVFX;
     [SerializeField] private RoundResultPanelUI roundResultPanelUI;
     [SerializeField] private GameController gameController;
+    [SerializeField] private GameplayHUDPresentation gameplayHUD;
 
     [Header("Wipe")]
     [SerializeField] private RectTransform wipeImage;
@@ -65,6 +66,9 @@ public class RoundTransitionController : MonoBehaviour
 
     private IEnumerator PlayTransitionRoutine(RoundWinner winner)
     {
+        if (gameplayHUD != null)
+            yield return gameplayHUD.HideForResult();
+
         // 1. Tutup layar dengan wipe.
         yield return AnimateWipe(
             wipeOpenPosition,

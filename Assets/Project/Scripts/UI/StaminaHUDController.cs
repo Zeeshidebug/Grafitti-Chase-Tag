@@ -11,6 +11,7 @@ public class StaminaHUDController : MonoBehaviour
     [SerializeField] private Image staminaBar;
     [SerializeField] private RectTransform staminaBarTransform;
     [SerializeField] private TMP_Text warningText;
+    [SerializeField] private Image staminaBorder;
 
     [Header("Colors")]
     [SerializeField] private Color normalColor = Color.white;
@@ -88,6 +89,7 @@ public class StaminaHUDController : MonoBehaviour
             }
 
             staminaBar.color = normalColor;
+            if (staminaBorder != null) staminaBorder.color = Color.white;
             warningText.gameObject.SetActive(false);
         }
     }
@@ -154,6 +156,8 @@ public class StaminaHUDController : MonoBehaviour
                 flashTimer = 0f;
                 red = !red;
                 staminaBar.color = red ? warningColor : normalColor;
+                if (staminaBorder != null)
+                    staminaBorder.color = new Color(1f, 1f, 1f, red ? 0.45f : 1f);
             }
 
             // Shake the stamina bar briefly.
@@ -194,6 +198,8 @@ public class StaminaHUDController : MonoBehaviour
             red = !red;
 
             staminaBar.color = red ? warningColor : normalColor;
+            if (staminaBorder != null)
+                staminaBorder.color = new Color(1f, 1f, 1f, red ? 0.45f : 1f);
             warningText.color = red ? warningColor : Color.white;
 
             yield return new WaitForSeconds(exhaustedBlinkInterval);
@@ -201,6 +207,7 @@ public class StaminaHUDController : MonoBehaviour
 
         staminaBar.color = normalColor;
         warningText.color = Color.white;
+        if (staminaBorder != null) staminaBorder.color = Color.white;
         warningTextTransform.anchoredPosition = originalWarningPosition;
         warningText.gameObject.SetActive(false);
 
@@ -211,6 +218,7 @@ public class StaminaHUDController : MonoBehaviour
     {
         staminaBarTransform.anchoredPosition = originalBarPosition;
         staminaBar.color = normalColor;
+        if (staminaBorder != null) staminaBorder.color = Color.white;
 
         warningText.color = Color.white;
         warningTextTransform.anchoredPosition = originalWarningPosition;
@@ -228,6 +236,7 @@ public class StaminaHUDController : MonoBehaviour
             staminaBarTransform.anchoredPosition = originalBarPosition;
         if (staminaBar != null)
             staminaBar.color = normalColor;
+        if (staminaBorder != null) staminaBorder.color = Color.white;
         if (warningText != null)
             warningText.color = Color.white;
     }
