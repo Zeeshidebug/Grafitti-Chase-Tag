@@ -7,6 +7,7 @@ using UnityEngine;
 public class GameplayPauseController : MonoBehaviour
 {
     [SerializeField] private CinemachineInputAxisController cameraInput;
+    [SerializeField] private RoundController roundController;
 
     private PlayerInputHandler input;
     private bool hasFocus;
@@ -57,12 +58,13 @@ public class GameplayPauseController : MonoBehaviour
         if (cameraInput == null)
             return;
 
-        if (!capture && cameraInput.enabled)
+        bool allowLook = capture && (roundController == null || roundController.CurrentState == RoundState.Playing);
+        if (!allowLook && cameraInput.enabled)
         {
             cameraInput.enabled = false;
             suspendedCameraInput = true;
         }
-        else if (capture && suspendedCameraInput)
+        else if (allowLook && suspendedCameraInput)
             RestoreCameraInput();
     }
 

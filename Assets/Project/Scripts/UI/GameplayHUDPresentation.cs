@@ -11,6 +11,7 @@ public sealed class GameplayHUDPresentation : MonoBehaviour
     [SerializeField] private RectTransform timer;
     [SerializeField] private ParticleSystem leftBurst;
     [SerializeField] private ParticleSystem rightBurst;
+    [SerializeField] private bool controlledRoundEntry;
     [SerializeField, Min(0.1f)] private float entranceDuration = 0.48f;
     [SerializeField, Min(0.1f)] private float exitDuration = 0.32f;
     private Vector2 leftHome, rightHome;
@@ -30,7 +31,7 @@ public sealed class GameplayHUDPresentation : MonoBehaviour
     private void Update()
     {
         var state = roundController.CurrentState;
-        if (state == RoundState.Playing && previousState != RoundState.Playing)
+        if (!controlledRoundEntry && state == RoundState.Playing && previousState != RoundState.Playing)
         {
             if (motion != null) StopCoroutine(motion);
             motion = StartCoroutine(Enter());
@@ -60,16 +61,20 @@ public sealed class GameplayHUDPresentation : MonoBehaviour
     private IEnumerator Enter()
     {
         visible = true;
-        roleGroup.alpha = trackingGroup.alpha = 1f;
+        roleGroup.alpha = 1f;
+        trackingGroup.alpha = 0f;
         float elapsed = 0f;
         bool burst = false;
-        while (elapsed < entranceDuration)
+        while (elapsed < entranceDuration || GameplayPauseController.IsPaused)
         {
             elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / entranceDuration);
             float tail = (1f - t) * (1f - t) * (1f - 1.7f * t);
             float stretch = Mathf.Sin(t * Mathf.PI * 2f) * 0.10f;
             SetPose(1f - tail, 1f + stretch, 1f - stretch);
+            float pop = Mathf.Clamp01(t / 0.6f) - 1f;
+            timer.localScale = Vector3.one * (1f + 2.4f * pop * pop * pop + 1.4f * pop * pop);
+            trackingGroup.alpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - 0.2f) / 0.8f));
             if (!burst && t > 0.7f)
             {
                 UIParticleCanvasRenderer.PlayBurst(leftBurst);
@@ -79,7 +84,16 @@ public sealed class GameplayHUDPresentation : MonoBehaviour
             yield return null;
         }
         SetPose(1f, 1f, 1f);
+        timer.localScale = Vector3.one;
+        trackingGroup.alpha = 1f;
         motion = null;
+    }
+
+    public IEnumerator ShowForRoundEntry()
+    {
+        if (motion != null) StopCoroutine(motion);
+        motion = null;
+        yield return Enter();
     }
 
     public IEnumerator HideForResult()
@@ -89,7 +103,7 @@ public sealed class GameplayHUDPresentation : MonoBehaviour
         motion = null;
         Vector2 leftStart = leftBar.anchoredPosition, rightStart = rightBar.anchoredPosition;
         float elapsed = 0f;
-        while (elapsed < exitDuration)
+        while (elapsed < exitDuration || GameplayPauseController.IsPaused)
         {
             elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / exitDuration);

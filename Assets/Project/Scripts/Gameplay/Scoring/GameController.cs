@@ -8,6 +8,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private ScoreController scoreController;
     [SerializeField] private RoleController playerRoleController;
     [SerializeField] private RoleController aiRoleController;
+    [SerializeField] private RoundTransitionController roundEntry;
 
     [Header("Round Spawn Points (feet)")]
     [SerializeField] private Transform spawnPointA1;
@@ -29,6 +30,7 @@ public class GameController : MonoBehaviour
 
     // Pengaman agar hasil ronde tidak diproses dua kali.
     private bool resultProcessedForCurrentRound;
+    private bool roundPrepared;
 
     public int CurrentRound => currentRound;
     public int NextRoundNumber => currentRound + 1;
@@ -57,8 +59,16 @@ public class GameController : MonoBehaviour
 
     private void StartNextRound()
     {
-        if (gameStatus != GameStatus.Playing)
-            return;
+        if (!PrepareNextRound()) return;
+        if (roundEntry != null) roundEntry.PlayPreparedRoundEntry();
+        else BeginPreparedRound();
+    }
+
+    // Called only while the entry/result cover hides the characters.
+    public bool PrepareNextRound()
+    {
+        if (gameStatus != GameStatus.Playing || roundPrepared ||
+            (currentRound > 0 && !resultProcessedForCurrentRound)) return false;
 
         // Role baru dirotasi setelah ronde pertama.
         if (currentRound > 0)
@@ -67,9 +77,17 @@ public class GameController : MonoBehaviour
         currentRound++;
         resultProcessedForCurrentRound = false;
 
-        Debug.Log($"ROUND {currentRound} STARTING");
-
+        roundPrepared = true;
+        roundController.PrepareRound();
         PositionCharactersForRound();
+        return true;
+    }
+
+    public void BeginPreparedRound()
+    {
+        if (gameStatus != GameStatus.Playing || !roundPrepared) return;
+        roundPrepared = false;
+        Debug.Log($"ROUND {currentRound} STARTING");
         roundController.StartRound();
     }
 

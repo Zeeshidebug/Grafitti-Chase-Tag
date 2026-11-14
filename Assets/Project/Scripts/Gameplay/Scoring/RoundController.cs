@@ -35,10 +35,16 @@ public class RoundController : MonoBehaviour
         }
     }
 
-    public void StartRound()
+    public void PrepareRound()
     {
         remainingTime = roundDuration;
         roundWinner = RoundWinner.None;
+        currentState = RoundState.Waiting;
+    }
+
+    public void StartRound()
+    {
+        PrepareRound();
         currentState = RoundState.Playing;
 
         buffNerfSpawner.StartSpawning();
@@ -47,7 +53,7 @@ public class RoundController : MonoBehaviour
 
     public void EndRound(RoundWinner winner)
     {
-        if (currentState == RoundState.Finished)
+        if (currentState != RoundState.Playing)
             return;
 
         if (winner == RoundWinner.None)
