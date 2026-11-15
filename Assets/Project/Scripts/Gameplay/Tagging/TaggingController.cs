@@ -1,3 +1,4 @@
+
 using UnityEngine;
 
 public class TaggingController : MonoBehaviour
@@ -9,6 +10,7 @@ public class TaggingController : MonoBehaviour
     [SerializeField] private BuffNerfController buffNerfController;
     [SerializeField] private Animator animator;
     [SerializeField] private StaminaHUDController staminaHUDController;
+    [SerializeField] private TaggingVFXController taggingVFXController;
 
     [Header("Tagging")]
     [SerializeField] private float staminaCostMultiplier = 0.5f;
@@ -24,14 +26,21 @@ public class TaggingController : MonoBehaviour
     private RoleController proximityTargetRole;
     private float cooldownTimer;
 
-    private float EffectiveRange => sprayRange *
-        buffNerfController.GetStatMultiplier(StatType.TagSprayRange);
+    private float EffectiveRange =>
+        sprayRange *
+        buffNerfController.GetStatMultiplier(
+            StatType.TagSprayRange
+        );
 
     private void Awake()
     {
         ownReceiver = GetComponent<TagReceiver>();
+
         if (proximityTarget != null)
-            proximityTargetRole = proximityTarget.GetComponent<RoleController>();
+        {
+            proximityTargetRole =
+                proximityTarget.GetComponent<RoleController>();
+        }
     }
 
     public bool IsOnCooldown =>
@@ -49,25 +58,48 @@ public class TaggingController : MonoBehaviour
 
     public bool TryTag()
     {
-        if (GameplayPauseController.IsPaused || !roleController.IsChaser || IsOnCooldown ||
+        // Check pause, role, cooldown, and round state.
+        if (GameplayPauseController.IsPaused ||
+            !roleController.IsChaser ||
+            IsOnCooldown ||
             (ownReceiver != null && !ownReceiver.RoundIsPlaying))
+        {
             return false;
+        }
 
+        // Check proximity target if assigned.
         if (proximityTarget != null)
         {
-            if (!proximityTarget.isActiveAndEnabled || proximityTargetRole == null || !proximityTargetRole.IsEvader)
+            if (!proximityTarget.isActiveAndEnabled ||
+                proximityTargetRole == null ||
+                !proximityTargetRole.IsEvader)
+            {
                 return false;
+            }
 
             float range = EffectiveRange;
-            if ((targetLayer.value & (1 << proximityTarget.gameObject.layer)) == 0 ||
-                (proximityTarget.transform.position - transform.position).sqrMagnitude > range * range)
+
+            if ((targetLayer.value &
+                 (1 << proximityTarget.gameObject.layer)) == 0 ||
+                (proximityTarget.transform.position - transform.position)
+                    .sqrMagnitude > range * range)
+            {
                 return false;
+            }
         }
+        // Otherwise, use manual tagging input.
         else if (movementIntent == null || !movementIntent.Tagging)
         {
             return false;
         }
 
+        // Calculate Tag Spray Range multiplier.
+        float rangeMultiplier =
+            buffNerfController.GetStatMultiplier(
+                StatType.TagSprayRange
+            );
+
+        // Calculate stamina cost.
         float staminaCost =
             staminaSystem.MaxStamina *
             staminaCostMultiplier;
@@ -80,23 +112,43 @@ public class TaggingController : MonoBehaviour
 
         cooldownTimer = cooldownDuration;
 
+        // Execute only one tagging method.
         if (proximityTarget != null)
+        {
             proximityTarget.ReceiveTag();
+        }
         else
-            PerformTagSpray();
+        {
+            PerformTagSpray(rangeMultiplier);
+        }
 
-        animator.SetTrigger("Tagging");
+        // Play tagging animation.
+        if (animator != null)
+        {
+            animator.SetTrigger("Tagging");
+        }
+
+        // Play tagging VFX based on range multiplier.
+        if (taggingVFXController != null)
+        {
+            taggingVFXController.PlaySprayEffect(
+                rangeMultiplier
+            );
+        }
 
         return true;
     }
 
-    private void PerformTagSpray()
+    private void PerformTagSpray(float rangeMultiplier)
     {
-        float finalSprayRange = EffectiveRange;
+        float finalSprayRange =
+            sprayRange * rangeMultiplier;
 
         float finalSprayAngle =
-        sprayAngle *
-        buffNerfController.GetStatMultiplier(StatType.TagSprayRadius);
+            sprayAngle *
+            buffNerfController.GetStatMultiplier(
+                StatType.TagSprayRadius
+            );
 
         Collider[] hits = Physics.OverlapSphere(
             transform.position,

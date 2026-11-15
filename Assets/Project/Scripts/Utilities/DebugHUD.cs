@@ -45,8 +45,7 @@ public class DebugHUD : MonoBehaviour
         AIToken
     }
 
-    private DebugPage currentPage = DebugPage.AIToken;
-
+    private DebugPage currentPage = DebugPage.Player;
     private void Awake()
     {
         inputHandler = GetComponent<PlayerInputHandler>();
@@ -544,9 +543,10 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label($"Decision: {aiController.DebugTokenDecision}");
 
         foreach (string candidate in aiController.DebugTokenCandidateLines)
+        {
             GUILayout.Label(candidate);
+        }
     }
-
 
 
     private void DrawUtilityCurveGraph(
