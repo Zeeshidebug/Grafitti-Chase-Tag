@@ -32,7 +32,7 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private float graphHeight = 110f;
     [SerializeField] private float graphMargin = 20f;
 
-    private bool showDebug = true;
+    private bool showDebug = false;
 
     private enum DebugPage
     {

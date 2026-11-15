@@ -11,6 +11,7 @@ public class RoundTransitionController : MonoBehaviour
     [SerializeField] private GameController gameController;
     [SerializeField] private GameplayHUDPresentation gameplayHUD;
     [SerializeField] private RoundEntryPresentation entryPresentation;
+    [SerializeField] private RoundResultPresentation resultPresentation;
 
     [Header("Wipe")]
     [SerializeField] private RectTransform wipeImage;
@@ -104,6 +105,30 @@ public class RoundTransitionController : MonoBehaviour
         EntryPhase = "Result";
         if (gameplayHUD != null)
             yield return gameplayHUD.HideForResult();
+
+        if (resultPresentation != null)
+        {
+            yield return resultPresentation.CloseCover();
+            roundOutcomeVFX.HideOutcome();
+            bool finished = false;
+            yield return resultPresentation.ShowScore(gameController.CurrentRound,
+                gameController.PlayerScore, gameController.AIScore,
+                gameController.GetRoundWinnerMessage(winner), () =>
+                {
+                    finished = gameController.ProcessRoundResult(winner);
+                    return new Vector2Int(gameController.PlayerScore, gameController.AIScore);
+                });
+            if (!finished)
+            {
+                // Both diagonal halves are still closed when roles rotate and actors warp.
+                if (!gameController.PrepareNextRound()) yield break;
+                yield return null;
+            }
+            yield return resultPresentation.Exit(!finished);
+            if (finished) SceneManager.LoadScene("Endscreen");
+            else yield return PlayEntryRoutine(false);
+            yield break;
+        }
 
         // 1. Tutup layar dengan wipe.
         yield return AnimateWipe(
