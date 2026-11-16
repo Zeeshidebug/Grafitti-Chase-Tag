@@ -488,6 +488,7 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label(
             $"Navigation: {(navMeshDriver.IsProxyDetached ? "Proxy" : "Synced")} | " +
             $"Parkour Exit: {navMeshDriver.IsExitingParkourSurface}");
+        GUILayout.Label($"Movement: {navMeshDriver.DebugNavigationStatus}");
 
         GUILayout.Space(2f);
         GUILayout.Label("UTILITY SCORES");
