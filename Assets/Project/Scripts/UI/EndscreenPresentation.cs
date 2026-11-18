@@ -143,10 +143,15 @@ public sealed class EndscreenPresentation : MonoBehaviour
         if(EventSystem.current!=null)EventSystem.current.SetSelectedGameObject(playAgain.gameObject);
     }
 
-    public IEnumerator CoverForExit()
+    public void PrepareForExit()
     {
         Phase="Leaving";
         controlsGroup.interactable=controlsGroup.blocksRaycasts=false;
+    }
+
+    public IEnumerator CoverForExit()
+    {
+        PrepareForExit();
         float from=curtain.Reveal;
         yield return Motion(.3f,t=>curtain.SetReveal(Mathf.Lerp(from,0,Mathf.SmoothStep(0,1,t)),PlayerWon || IsDraw));
         yield return null;

@@ -10,6 +10,13 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private GameObject creditsPanel;
     [SerializeField] private MenuInkWipe wipe;
 
+    [Header("Scene entry")]
+    [SerializeField] private RoundIrisOverlay entryIris;
+    [Tooltip("Disable when an intro will call RevealMenu after it finishes.")]
+    [SerializeField] private bool autoRevealOnStart = true;
+    [Min(0f)] [SerializeField] private float entryHoldDuration = 0.12f;
+    [Min(0.01f)] [SerializeField] private float entryRevealDuration = 0.65f;
+
     [Header("Controls")]
     [SerializeField] private MenuButtonFeedback play;
     [SerializeField] private MenuButtonFeedback credits;
@@ -17,15 +24,56 @@ public class MainMenuController : MonoBehaviour
     [SerializeField] private MenuButtonFeedback exit;
 
     public bool IsTransitioning { get; private set; }
+    public string EntryPhase { get; private set; } = "Covered";
+    private bool revealRequested;
 
     private enum Destination { Gameplay, Credits, Home, Exit }
 
-    private void Start()
+    private void Awake()
     {
+        wipe.SetCoverage(0f);
+        wipe.raycastTarget = false;
+        IsTransitioning = entryIris != null;
+        if (entryIris != null) entryIris.SetReveal(0f);
+    }
+
+    private IEnumerator Start()
+    {
+        Time.timeScale = 1f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
-        EventSystem.current.SetSelectedGameObject(play.gameObject);
+        var events = EventSystem.current;
+        if (entryIris != null)
+        {
+            if (events != null)
+            {
+                events.sendNavigationEvents = false;
+                events.SetSelectedGameObject(null);
+            }
+            // Always present a covered frame, even when launched directly.
+            yield return null;
+            if (autoRevealOnStart) revealRequested = true;
+            while (!revealRequested) yield return null;
+            yield return new WaitForSecondsRealtime(Mathf.Max(0f, entryHoldDuration));
+            EntryPhase = "Opening";
+            for (float elapsed = 0f; elapsed < entryRevealDuration; elapsed += Time.unscaledDeltaTime)
+            {
+                entryIris.SetReveal(Mathf.SmoothStep(0f, 1f, elapsed / entryRevealDuration));
+                yield return null;
+            }
+            entryIris.SetReveal(1f);
+        }
+        EntryPhase = "Ready";
+        IsTransitioning = false;
+        if (events != null)
+        {
+            events.sendNavigationEvents = true;
+            events.SetSelectedGameObject(play.gameObject);
+        }
     }
+
+    // Safe before Start or when called repeatedly by a future intro/Timeline.
+    public void RevealMenu() => revealRequested = true;
 
     public void PlayGame() => Go(Destination.Gameplay, play);
     public void OpenCredits() => Go(Destination.Credits, credits);

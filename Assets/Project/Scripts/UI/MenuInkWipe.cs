@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public sealed class MenuInkWipe : MaskableGraphic
 {
     private float coverage;
+    public float Coverage => coverage;
     private static readonly Color32 Ink = new Color32(32, 9, 52, 255);
     private static readonly Color32 Violet = new Color32(91, 15, 136, 255);
     private static readonly Color32 Pink = new Color32(251, 33, 161, 255);

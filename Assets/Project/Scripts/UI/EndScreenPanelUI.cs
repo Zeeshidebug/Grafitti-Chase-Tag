@@ -2,6 +2,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class EndScreenPanelUI : MonoBehaviour
 {
@@ -10,7 +11,18 @@ public class EndScreenPanelUI : MonoBehaviour
     [SerializeField] private TMP_Text playerScoreText;
     [SerializeField] private TMP_Text enemyScoreText;
     [SerializeField] private EndscreenPresentation presentation;
+    [Header("Scene exit")]
+    [SerializeField] private MenuInkWipe exitWipe;
+    [Min(0.01f)] [SerializeField] private float exitWipeDuration = 0.35f;
     private bool leaving;
+    public bool IsLeaving => leaving;
+
+    private void Awake()
+    {
+        if (exitWipe == null) return;
+        exitWipe.SetCoverage(0f);
+        exitWipe.raycastTarget = false;
+    }
 
     private void Start()
     {
@@ -56,14 +68,32 @@ public class EndScreenPanelUI : MonoBehaviour
     {
         if (leaving || (presentation != null && !presentation.Ready)) return;
         leaving = true;
+        if (presentation != null) presentation.PrepareForExit();
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.sendNavigationEvents = false;
+            EventSystem.current.SetSelectedGameObject(null);
+        }
+        if (exitWipe != null) exitWipe.raycastTarget = true;
         StartCoroutine(Load(scene));
     }
 
     private IEnumerator Load(string scene)
     {
-        if (presentation != null) yield return presentation.CoverForExit();
+        if (exitWipe != null)
+        {
+            for (float elapsed = 0f; elapsed < exitWipeDuration; elapsed += Time.unscaledDeltaTime)
+            {
+                exitWipe.SetCoverage(Mathf.SmoothStep(0f, 1f, elapsed / exitWipeDuration));
+                yield return null;
+            }
+            exitWipe.SetCoverage(1f);
+            // Render an opaque frame before the destination establishes its cover.
+            yield return null;
+        }
+        else if (presentation != null) yield return presentation.CoverForExit();
         MatchResultData.Reset();
         Time.timeScale = 1f;
-        yield return SceneManager.LoadSceneAsync(scene);
+        yield return SceneManager.LoadSceneAsync(scene, LoadSceneMode.Single);
     }
 }
