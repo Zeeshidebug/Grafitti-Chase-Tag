@@ -110,6 +110,21 @@ public class RoundTransitionController : MonoBehaviour
         {
             yield return resultPresentation.CloseCover();
             roundOutcomeVFX.HideOutcome();
+            if (gameController.WillFinishMatch(winner))
+            {
+                int oldPlayer = gameController.PlayerScore, oldEnemy = gameController.AIScore;
+                yield return resultPresentation.ShowConcluded(gameController.CurrentRound,
+                    oldPlayer, oldEnemy, gameController.GetRoundWinnerMessage(winner));
+                if (gameController.ProcessRoundResult(winner))
+                {
+                    MatchResultData.SavePresentation(gameController.CurrentRound, oldPlayer, oldEnemy);
+                    EntryPhase = "Endscreen";
+                    // Preserve the concluded banners under a fully opaque cover until
+                    // the next scene continues their buildup. No retreat or second award.
+                    yield return SceneManager.LoadSceneAsync("Endscreen");
+                    yield break;
+                }
+            }
             bool finished = false;
             yield return resultPresentation.ShowScore(gameController.CurrentRound,
                 gameController.PlayerScore, gameController.AIScore,

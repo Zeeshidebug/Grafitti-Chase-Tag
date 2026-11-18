@@ -52,6 +52,7 @@ public class GameController : MonoBehaviour
             return;
 
         currentRound = 0;
+        MatchResultData.Reset();
         gameStatus = GameStatus.Playing;
 
         StartNextRound();
@@ -137,6 +138,17 @@ public class GameController : MonoBehaviour
         }
 
         return false;
+    }
+
+    // Predict the final round without changing score or roles; the normal guarded
+    // ProcessRoundResult remains the only place that awards a point.
+    public bool WillFinishMatch(RoundWinner winner)
+    {
+        if (gameStatus != GameStatus.Playing || winner == RoundWinner.None) return false;
+        bool playerScores = IsRoleWinner(winner, playerRoleController.CurrentRole);
+        int player = PlayerScore + (playerScores ? 1 : 0);
+        int ai = AIScore + (!playerScores && IsRoleWinner(winner, aiRoleController.CurrentRole) ? 1 : 0);
+        return player >= roundsToWin || ai >= roundsToWin || currentRound >= maxRounds;
     }
 
     /// Menentukan siapa yang mendapatkan poin,

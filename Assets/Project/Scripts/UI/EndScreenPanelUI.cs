@@ -1,6 +1,7 @@
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine;
+using System.Collections;
 
 public class EndScreenPanelUI : MonoBehaviour
 {
@@ -8,14 +9,17 @@ public class EndScreenPanelUI : MonoBehaviour
     [SerializeField] private TMP_Text resultText;
     [SerializeField] private TMP_Text playerScoreText;
     [SerializeField] private TMP_Text enemyScoreText;
+    [SerializeField] private EndscreenPresentation presentation;
+    private bool leaving;
 
     private void Start()
     {
-        ShowEndscreen();
+        if (presentation == null) ShowEndscreen();
     }
 
     public void ShowEndscreen()
     {
+        if (presentation != null) return;
         int playerScore = MatchResultData.PlayerScore;
         int enemyScore = MatchResultData.AIScore;
 
@@ -40,13 +44,26 @@ public class EndScreenPanelUI : MonoBehaviour
 
     public void PlayAgain()
     {
-        MatchResultData.Reset();
-        SceneManager.LoadScene("Gameplay");
+        Leave("Gameplay");
     }
 
     public void ReturnToMainMenu()
     {
+        Leave("MainMenu");
+    }
+
+    private void Leave(string scene)
+    {
+        if (leaving || (presentation != null && !presentation.Ready)) return;
+        leaving = true;
+        StartCoroutine(Load(scene));
+    }
+
+    private IEnumerator Load(string scene)
+    {
+        if (presentation != null) yield return presentation.CoverForExit();
         MatchResultData.Reset();
-        SceneManager.LoadScene("MainMenu");
+        Time.timeScale = 1f;
+        yield return SceneManager.LoadSceneAsync(scene);
     }
 }

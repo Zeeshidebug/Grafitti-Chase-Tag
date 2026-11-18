@@ -47,6 +47,11 @@ public sealed class RoundResultPresentation : MonoBehaviour
     }
     public IEnumerator ShowScore(int round, int oldPlayer, int oldEnemy, string message, Func<Vector2Int> commitScore)
     {
+        yield return ShowConcluded(round, oldPlayer, oldEnemy, message);
+        yield return ShowScoreBurst(oldPlayer, commitScore);
+    }
+    public IEnumerator ShowConcluded(int round, int oldPlayer, int oldEnemy, string message)
+    {
         panel.gameObject.SetActive(true);
         playerScore.text=oldPlayer.ToString(); enemyScore.text=oldEnemy.ToString();
         title.text=$"Round {round} Concluded!";winner.text=message;versus.text="VS";
@@ -68,6 +73,9 @@ public sealed class RoundResultPresentation : MonoBehaviour
         });
         playerBanner.localScale=enemyBanner.localScale=Vector3.one;Alpha(flash,0);
         yield return Pop(title,.2f); Phase="Concluded";yield return Motion(concludedHold,null);
+    }
+    private IEnumerator ShowScoreBurst(int oldPlayer, Func<Vector2Int> commitScore)
+    {
         Phase="Buildup";
         yield return Motion(buildupDuration,t=>
         {
