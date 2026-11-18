@@ -77,6 +77,30 @@ public class CharacterMovement : MonoBehaviour
 
     public void SpawnAt(Transform marker)
     {
+        ResetForRound();
+
+        Vector3 previousPosition = transform.position;
+        characterController.enabled = false;
+        transform.rotation = marker.rotation;
+        // Markers can sit slightly above the floor. Land the standing capsule
+        // and the navigation proxy on the same surface.
+        Vector3 feet = marker.position;
+        float probeLift = characterController.skinWidth + 0.1f;
+        int groundMask = Physics.DefaultRaycastLayers & ~(1 << gameObject.layer);
+        if (Physics.Raycast(feet + Vector3.up * probeLift, Vector3.down, out RaycastHit ground,
+            characterController.height + probeLift, groundMask, QueryTriggerInteraction.Ignore))
+            feet = ground.point;
+
+        transform.position = feet - CharacterControllerGeometry.GetWorldBottomOffset(characterController);
+        GetComponent<AINavMeshDriver>()?.ResetForSpawn(feet);
+        GetComponent<PlayerMovementIntent>()?.OnSpawn(transform.position - previousPosition);
+        characterController.enabled = true;
+    }
+
+    // Called while the round cover is closed. Cancel actions before resetting
+    // animation so their exit triggers cannot leak into the next round.
+    public void ResetForRound()
+    {
         GetComponent<VaultExecutor>()?.CancelForSpawn();
         GetComponent<ClimbExecutor>()?.CancelForSpawn();
         slideExecutor?.CancelForSpawn();
@@ -96,24 +120,39 @@ public class CharacterMovement : MonoBehaviour
         hasLeftGround = false;
         characterState.SetState(LocomotionState.Grounded);
 
-        Vector3 previousPosition = transform.position;
-        characterController.enabled = false;
-        transform.rotation = marker.rotation;
-        // Markers can sit slightly above the floor. Land the standing capsule
-        // and the navigation proxy on the same surface.
-        Vector3 feet = marker.position;
-        float probeLift = characterController.skinWidth + 0.1f;
-        int groundMask = Physics.DefaultRaycastLayers & ~(1 << gameObject.layer);
-        if (Physics.Raycast(feet + Vector3.up * probeLift, Vector3.down, out RaycastHit ground,
-            characterController.height + probeLift, groundMask, QueryTriggerInteraction.Ignore))
-            feet = ground.point;
-
-        transform.position = feet - CharacterControllerGeometry.GetWorldBottomOffset(characterController);
+        buffNerfController?.ResetForRound();
+        staminaSystem?.ResetForRound();
+        staminaHUDController?.ResetForRound();
+        GetComponent<TaggingController>()?.ResetForRound();
+        GetComponent<TagReceiver>()?.ResetForRound();
         GetComponent<AIActionController>()?.ResetForSpawn();
         GetComponent<UtilityAIController>()?.ResetForSpawn();
-        GetComponent<AINavMeshDriver>()?.ResetForSpawn(feet);
-        GetComponent<PlayerMovementIntent>()?.OnSpawn(transform.position - previousPosition);
-        characterController.enabled = true;
+        GetComponent<PlayerMovementIntent>()?.OnSpawn(Vector3.zero);
+        var aiIntent = GetComponent<AIMovementIntent>();
+        if (aiIntent != null)
+        {
+            aiIntent.SetMovementIntent(Vector3.zero, transform.forward);
+            aiIntent.SetJumpPressed(false);
+        }
+        GetComponent<JumpVFXController>()?.ResetForRound();
+
+        if (animator != null && animator.runtimeAnimatorController != null)
+        {
+            // Re-enter the controller's authored default states on every layer,
+            // including when the gameplay gate has disabled the Animator.
+            animator.Rebind();
+            animator.Update(0f);
+        }
+
+        // Clear world-space history without stopping continuously simulated
+        // sprint/buff systems, whose controllers toggle emission each frame.
+        foreach (var particles in GetComponentsInChildren<ParticleSystem>(true))
+            particles.Clear(true);
+        foreach (var trail in GetComponentsInChildren<TrailRenderer>(true))
+        {
+            trail.emitting = false;
+            trail.Clear();
+        }
     }
 
     private void Update()

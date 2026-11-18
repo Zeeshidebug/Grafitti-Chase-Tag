@@ -40,6 +40,13 @@ public class JumpVFXController : MonoBehaviour
         previousState = characterState.CurrentState;
         wasGroundedLastFrame = characterController.isGrounded;
     }
+
+    public void ResetForRound()
+    {
+        // A teleport to the next spawn is not a landing from the previous jump.
+        previousState = LocomotionState.Grounded;
+        wasGroundedLastFrame = true;
+    }
     private void HandleJumpStartDetecion()
     {
         if (inputHandler.JumpPressed && wasGroundedLastFrame && characterState.CurrentState == LocomotionState.Grounded)

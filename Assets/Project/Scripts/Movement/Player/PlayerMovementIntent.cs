@@ -41,7 +41,10 @@ public class PlayerMovementIntent : MonoBehaviour, ICharacterMovementIntent
     public void OnSpawn(Vector3 positionDelta)
     {
         Unity.Cinemachine.CinemachineCore.OnTargetObjectWarped(transform, positionDelta);
+        MovementDirection = Vector3.zero;
+        Sprinting = Interaction = InteractionHeld = JumpPressed = Tagging = false;
         FacingDirection = transform.forward;
+        lastCameraForward = FacingDirection;
         facingChangeTimer = 0f;
     }
 

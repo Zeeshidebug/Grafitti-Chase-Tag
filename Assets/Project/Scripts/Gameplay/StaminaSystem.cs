@@ -18,8 +18,14 @@ public class StaminaSystem : MonoBehaviour
 
     private void Awake()
     {
-        currentStamina = maxStamina;
+        ResetForRound();
         buffNerfController = GetComponent<BuffNerfController>();
+    }
+
+    public void ResetForRound()
+    {
+        currentStamina = maxStamina;
+        isExhausted = false;
     }
 
     public bool CanAfford(float amount)

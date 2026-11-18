@@ -13,6 +13,12 @@ public class TagReceiver : MonoBehaviour
         roundController != null &&
         roundController.CurrentState == RoundState.Playing;
 
+    public void ResetForRound()
+    {
+        if (tagSmokeMain != null)
+            tagSmokeMain.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+    }
+
     public void ReceiveTag()
     {
         if (!RoundIsPlaying)

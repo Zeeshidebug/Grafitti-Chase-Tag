@@ -30340,7 +30340,7 @@ MonoBehaviour:
   buffNerfSpawner: {fileID: 1814627817}
   roundOutcomeVFX: {fileID: 1640035471}
   roundTransitionController: {fileID: 711950115}
-  roundDuration: 10
+  roundDuration: 120
 --- !u!4 &1814627814
 Transform:
   m_ObjectHideFlags: 0

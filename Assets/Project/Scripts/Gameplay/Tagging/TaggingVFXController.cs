@@ -186,7 +186,7 @@ public class TaggingVFXController : MonoBehaviour
         );
     }
 
-    private void OnDisable()
+    public void ResetForRound()
     {
         if (sprayCoroutine != null)
         {
@@ -198,4 +198,6 @@ public class TaggingVFXController : MonoBehaviour
             ParticleSystemStopBehavior.StopEmittingAndClear
         );
     }
+
+    private void OnDisable() => ResetForRound();
 }

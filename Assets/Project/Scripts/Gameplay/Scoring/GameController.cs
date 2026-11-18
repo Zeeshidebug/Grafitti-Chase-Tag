@@ -95,7 +95,11 @@ public class GameController : MonoBehaviour
     private void PositionCharactersForRound()
     {
         if (!spawnPointA1 && !spawnPointA2 && !spawnPointB1 && !spawnPointB2)
+        {
+            playerRoleController.GetComponent<CharacterMovement>()?.ResetForRound();
+            aiRoleController.GetComponent<CharacterMovement>()?.ResetForRound();
             return;
+        }
 
         if (!spawnPointA1 || !spawnPointA2 || !spawnPointB1 || !spawnPointB2)
         {

@@ -105,6 +105,16 @@ public class StaminaHUDController : MonoBehaviour
         lowStaminaRoutine = StartCoroutine(LowStaminaFeedback());
     }
 
+    public void ResetForRound()
+    {
+        StopAllCoroutines();
+        lowStaminaRoutine = exhaustedRoutine = null;
+        wasExhausted = false;
+        StopLowStaminaFeedback();
+        warningText.gameObject.SetActive(false);
+        UpdateStaminaBar();
+    }
+
 
     private IEnumerator LowStaminaFeedback()
     {
