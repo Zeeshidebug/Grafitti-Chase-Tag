@@ -43,6 +43,7 @@ public class MovementCameraTests
     [TestCase("Gameplay")]
     [TestCase("AI-NAV-TEST2")]
     [TestCase("AI-Nav-Test")]
+    [TestCase("SpawnPoint-AITagging-test")]
     public void ScenesHaveOneIndependentLookOwner(string name)
     {
         EditorSceneManager.OpenScene($"Assets/Project/Scenes/{name}.unity");
@@ -58,7 +59,9 @@ public class MovementCameraTests
         Assert.That(camera.GetComponent<TraversalDeoccluder>(), Is.Not.Null);
         Assert.That(camera.GetComponent<CinemachineDeoccluder>().CollideAgainst.value & (1 << 10), Is.Zero);
         var inputs = camera.GetComponent<CinemachineInputAxisController>().Controllers;
-        Assert.That(inputs.Count(x => x.Enabled), Is.EqualTo(2));
+        var look = InputSystem.actions.FindAction("Player/Look", throwIfNotFound: true);
+        var lookAxes = inputs.Where(x => x.Enabled && x.Input.InputAction?.action == look);
+        Assert.That(lookAxes.Select(x => x.Name), Is.EquivalentTo(new[] { "Look Orbit X", "Look Orbit Y" }));
         Assert.That(inputs.Where(x => x.Enabled).All(x => x.Owner == orbit), Is.True);
         Assert.That(camera.Follow.GetComponent<PlayerMovementIntent>(), Is.Not.Null);
     }

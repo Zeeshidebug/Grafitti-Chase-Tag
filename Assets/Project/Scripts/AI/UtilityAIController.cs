@@ -240,6 +240,15 @@ public class UtilityAIController : MonoBehaviour
             tokenEvaluator = GetComponent<AITokenEvaluator>();
     }
 
+    public void ResetForSpawn()
+    {
+        hasCurrentDestination = false;
+        commitmentTimer = 0f;
+        ClearTokenTarget();
+        decisionTimer = 0f;
+        isSprintRequested = false;
+    }
+
     private void Start()
     {
         if (roleController == null ||
@@ -269,6 +278,9 @@ public class UtilityAIController : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         // Keep decision ticks running while parkour owns physical movement.
         // Preserve the current sprint choice during an airborne/action phase.
         if (characterState == null ||
@@ -372,7 +384,7 @@ public class UtilityAIController : MonoBehaviour
                 player.position,
                 out NavMeshHit hit,
                 destinationSampleRadius,
-                navMeshAgent.areaMask))
+                new NavMeshQueryFilter {agentTypeID=navMeshAgent.agentTypeID,areaMask=navMeshAgent.areaMask}))
         {
             if (KeepDestinationForProxySearch())
                 return;
@@ -400,8 +412,9 @@ public class UtilityAIController : MonoBehaviour
             navMeshDriver.NavigationOrigin,
             hit.position);
 
-        if (navMeshDriver.TryCalculateNavigationPath(hit.position, chasePath) &&
-            chasePath.status == NavMeshPathStatus.PathComplete)
+        bool chasePathFound = navMeshDriver.TryCalculateNavigationPath(hit.position, chasePath);
+        bool chasePathComplete = chasePathFound && chasePath.status == NavMeshPathStatus.PathComplete;
+        if (chasePathComplete)
         {
             chasePathLength = NavMeshPathUtility.CalculateLength(chasePath, ref pathCorners);
         }
@@ -424,11 +437,13 @@ public class UtilityAIController : MonoBehaviour
         }
 
         navMeshDriver.SetDestination(hit.position);
-        DebugSelectedDecision = "Chase";
+        DebugSelectedDecision = chasePathComplete ? "Chase" :
+            (chasePathFound && chasePath.status == NavMeshPathStatus.PathPartial
+                ? "Chase (partial: approach traversal)" : "Chase (waiting for path)");
         DebugSelectedScore = score;
         DebugSelectedDistance = playerDistance;
         DebugSelectedPathLength = chasePathLength;
-        DebugSelectedPathQuality = 1f;
+        DebugSelectedPathQuality = chasePathComplete ? 1f : 0f;
         DebugDestination = hit.position;
     }
 
@@ -476,7 +491,7 @@ public class UtilityAIController : MonoBehaviour
                     rawPosition,
                     out NavMeshHit hit,
                     destinationSampleRadius,
-                    navMeshAgent.areaMask))
+                    new NavMeshQueryFilter {agentTypeID=navMeshAgent.agentTypeID,areaMask=navMeshAgent.areaMask}))
             {
                 DebugSampleFailureCount++;
                 DebugLastCandidateFailure = $"SamplePosition failed for candidate {i}; raw={rawPosition}";

@@ -116,9 +116,14 @@ public class VaultExecutor : MonoBehaviour
         return true;
     }
 
+    public void CancelForSpawn()
+    {
+        isExecuting = false;
+    }
+
     private void Update()
     {
-        if (!isExecuting)
+        if (!isExecuting || GameplayPauseController.IsPaused)
             return;
 
         ExecuteVault();

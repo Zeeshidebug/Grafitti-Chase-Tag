@@ -74,6 +74,14 @@ public class AIActionController : MonoBehaviour
             navMeshDriver = GetComponent<AINavMeshDriver>();
     }
 
+    public void ResetForSpawn()
+    {
+        isAligningForAction = false;
+        pendingJumpClimbCandidate = null;
+        jumpActionInProgress = false;
+        retryCooldownTimer = 0f;
+    }
+
     private void Start()
     {
         if (parkourCandidateEvaluator == null ||
@@ -97,6 +105,9 @@ public class AIActionController : MonoBehaviour
 
     private void Update()
     {
+        if (GameplayPauseController.IsPaused)
+            return;
+
         if (vaultExecutor.IsExecuting ||
             slideExecutor.IsExecuting ||
             climbExecutor.IsExecuting)
@@ -155,9 +166,13 @@ public class AIActionController : MonoBehaviour
         }
 
         Vector3 actionDirection = GetObstacleTravelDirection(obstacle);
+        // A required crossing may be reached while walking or resting. The
+        // executor still validates geometry and charges the actual action cost.
+        bool canAttemptSprintAction = movementIntent.Sprinting || navMeshDriver.IsWaitingForTraversal;
 
-        // Priority 1: Vault, but only when sprinting and the trajectory is valid.
-        if (movementIntent.Sprinting &&
+        // Priority 1: Vault while sprinting or preparing a required crossing,
+        // only after validating the trajectory.
+        if (canAttemptSprintAction &&
             parkourCandidateEvaluator.TryGetVaultInitiationCandidate(
                 out VaultCandidate vaultCandidate))
         {
@@ -186,7 +201,7 @@ public class AIActionController : MonoBehaviour
 
         // Priority 2: Slide only if the executor's reduced capsule clears the
         // complete path underneath and beyond the detected obstacle.
-        if (movementIntent.Sprinting &&
+        if (canAttemptSprintAction &&
             slideExecutor.CanPassUnderObstacle(
                 obstacle,
                 actionDirection,

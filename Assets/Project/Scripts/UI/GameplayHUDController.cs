@@ -11,6 +11,7 @@ public class GameplayHUDController : MonoBehaviour
 
     private readonly Dictionary<ActiveBuffNerfEffect, ActiveEffectUI>
         activeEffectEntries = new();
+    private readonly List<ActiveBuffNerfEffect> effectsToRemove = new();
 
     private void Update()
     {
@@ -38,7 +39,7 @@ public class GameplayHUDController : MonoBehaviour
         }
 
         // Update durations and remove expired effects.
-        List<ActiveBuffNerfEffect> effectsToRemove = new();
+        effectsToRemove.Clear();
 
         foreach (var pair in activeEffectEntries)
         {
@@ -56,7 +57,7 @@ public class GameplayHUDController : MonoBehaviour
 
         foreach (ActiveBuffNerfEffect activeEffect in effectsToRemove)
         {
-            Destroy(activeEffectEntries[activeEffect].gameObject);
+            activeEffectEntries[activeEffect].Dismiss();
             activeEffectEntries.Remove(activeEffect);
         }
     }

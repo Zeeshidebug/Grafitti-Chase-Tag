@@ -32,7 +32,7 @@ public class TicTacExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!IsExecuting)
+        if (!IsExecuting || GameplayPauseController.IsPaused)
             return;
 
         if (characterState.CurrentState != LocomotionState.Grounded)

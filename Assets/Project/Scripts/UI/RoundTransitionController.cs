@@ -9,6 +9,9 @@ public class RoundTransitionController : MonoBehaviour
     [SerializeField] private RoundOutcomeVFX roundOutcomeVFX;
     [SerializeField] private RoundResultPanelUI roundResultPanelUI;
     [SerializeField] private GameController gameController;
+    [SerializeField] private GameplayHUDPresentation gameplayHUD;
+    [SerializeField] private RoundEntryPresentation entryPresentation;
+    [SerializeField] private RoundResultPresentation resultPresentation;
 
     [Header("Wipe")]
     [SerializeField] private RectTransform wipeImage;
@@ -30,6 +33,8 @@ public class RoundTransitionController : MonoBehaviour
 
     private Coroutine transitionRoutine;
     private bool transitionInProgress;
+    public bool IsTransitioning => transitionInProgress;
+    public string EntryPhase { get; private set; } = "Covered";
 
     private Vector3 roundTextOriginalScale;
     private Vector3 startTextOriginalScale;
@@ -63,8 +68,83 @@ public class RoundTransitionController : MonoBehaviour
         );
     }
 
+    public void PlayPreparedRoundEntry()
+    {
+        if (transitionInProgress || entryPresentation == null) return;
+        transitionInProgress = true;
+        transitionRoutine = StartCoroutine(PlayEntryRoutine(true));
+    }
+
+    private IEnumerator PlayEntryRoutine(bool firstRound)
+    {
+        // Allow the warped camera and spawned actors to settle under the cover.
+        yield return null;
+        EntryPhase = "Role";
+        yield return entryPresentation.ShowAssignment(firstRound);
+        EntryPhase = "HUD";
+        if (gameplayHUD != null) yield return gameplayHUD.ShowForRoundEntry();
+        EntryPhase = "Round";
+        roundText.text = $"ROUND {gameController.CurrentRound}";
+        yield return AnimateTextIn(roundText, roundTextOriginalScale, roundTextOriginalColor, roundTextDuration);
+        yield return WaitUnscaled(roundTextHoldDuration);
+        yield return AnimateTextOut(roundText);
+        EntryPhase = "Start";
+        startText.text = "START!";
+        yield return AnimateTextIn(startText, startTextOriginalScale, startTextOriginalColor, startTextDuration);
+        yield return WaitUnscaled(0.24f);
+        yield return AnimateTextOut(startText);
+        ResetAnnouncementTexts();
+        EntryPhase = "Playing";
+        transitionInProgress = false;
+        transitionRoutine = null;
+        gameController.BeginPreparedRound();
+    }
+
     private IEnumerator PlayTransitionRoutine(RoundWinner winner)
     {
+        EntryPhase = "Result";
+        if (gameplayHUD != null)
+            yield return gameplayHUD.HideForResult();
+
+        if (resultPresentation != null)
+        {
+            yield return resultPresentation.CloseCover();
+            roundOutcomeVFX.HideOutcome();
+            if (gameController.WillFinishMatch(winner))
+            {
+                int oldPlayer = gameController.PlayerScore, oldEnemy = gameController.AIScore;
+                yield return resultPresentation.ShowConcluded(gameController.CurrentRound,
+                    oldPlayer, oldEnemy, gameController.GetRoundWinnerMessage(winner));
+                if (gameController.ProcessRoundResult(winner))
+                {
+                    MatchResultData.SavePresentation(gameController.CurrentRound, oldPlayer, oldEnemy);
+                    EntryPhase = "Endscreen";
+                    // Preserve the concluded banners under a fully opaque cover until
+                    // the next scene continues their buildup. No retreat or second award.
+                    yield return SceneManager.LoadSceneAsync("Endscreen");
+                    yield break;
+                }
+            }
+            bool finished = false;
+            yield return resultPresentation.ShowScore(gameController.CurrentRound,
+                gameController.PlayerScore, gameController.AIScore,
+                gameController.GetRoundWinnerMessage(winner), () =>
+                {
+                    finished = gameController.ProcessRoundResult(winner);
+                    return new Vector2Int(gameController.PlayerScore, gameController.AIScore);
+                });
+            if (!finished)
+            {
+                // Both diagonal halves are still closed when roles rotate and actors warp.
+                if (!gameController.PrepareNextRound()) yield break;
+                yield return null;
+            }
+            yield return resultPresentation.Exit(!finished);
+            if (finished) SceneManager.LoadScene("Endscreen");
+            else yield return PlayEntryRoutine(false);
+            yield break;
+        }
+
         // 1. Tutup layar dengan wipe.
         yield return AnimateWipe(
             wipeOpenPosition,
@@ -94,6 +174,17 @@ public class RoundTransitionController : MonoBehaviour
         if (matchFinished)
         {
             SceneManager.LoadScene("Endscreen");
+            yield break;
+        }
+
+        if (entryPresentation != null)
+        {
+            // Score and winner message above use the old roles. Rotate and warp
+            // only now, while the result wipe is still completely opaque.
+            if (!gameController.PrepareNextRound()) yield break;
+            yield return null;
+            yield return AnimateWipe(wipeClosedPosition, wipeOpenPosition);
+            yield return PlayEntryRoutine(false);
             yield break;
         }
 
@@ -143,9 +234,9 @@ public class RoundTransitionController : MonoBehaviour
 
         wipeImage.anchoredPosition = from;
 
-        while (elapsed < wipeDuration)
+        while (elapsed < wipeDuration || GameplayPauseController.IsPaused)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / wipeDuration);
             t = Mathf.SmoothStep(0f, 1f, t);
@@ -168,6 +259,7 @@ public class RoundTransitionController : MonoBehaviour
         float elapsed = 0f;
 
         Vector3 startScale = originalScale * 0.35f;
+        Vector2 originalPosition = target.rectTransform.anchoredPosition;
 
         target.rectTransform.localScale = startScale;
 
@@ -175,15 +267,20 @@ public class RoundTransitionController : MonoBehaviour
         color.a = 0f;
         target.color = color;
 
-        while (elapsed < duration)
+        while (elapsed < duration || GameplayPauseController.IsPaused)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
             float t = Mathf.Clamp01(elapsed / duration);
-            float easedT = 1f - Mathf.Pow(1f - t, 3f);
+            float tail = t - 1f;
+            float easedT = entryPresentation != null
+                ? 1f + 2.7f * tail * tail * tail + 1.7f * tail * tail
+                : 1f - Mathf.Pow(1f - t, 3f);
 
             target.rectTransform.localScale =
                 Vector3.LerpUnclamped(startScale, originalScale, easedT);
+            if (entryPresentation != null)
+                target.rectTransform.anchoredPosition = originalPosition + Vector2.left * (60f * (1f - t) * (1f - t));
 
             color.a = Mathf.Lerp(0f, originalColor.a, t);
             target.color = color;
@@ -192,6 +289,7 @@ public class RoundTransitionController : MonoBehaviour
         }
 
         target.rectTransform.localScale = originalScale;
+        target.rectTransform.anchoredPosition = originalPosition;
         target.color = originalColor;
     }
 
@@ -199,11 +297,30 @@ public class RoundTransitionController : MonoBehaviour
     {
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (elapsed < duration || GameplayPauseController.IsPaused)
         {
-            elapsed += Time.unscaledDeltaTime;
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
             yield return null;
         }
+    }
+
+    private IEnumerator AnimateTextOut(TMP_Text target)
+    {
+        Vector2 position = target.rectTransform.anchoredPosition;
+        Color color = target.color;
+        float elapsed = 0f;
+        while (elapsed < 0.14f || GameplayPauseController.IsPaused)
+        {
+            elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / 0.14f);
+            target.rectTransform.anchoredPosition = position + Vector2.up * (32f * t * t);
+            color.a = 1f - t;
+            target.color = color;
+            yield return null;
+        }
+        target.rectTransform.anchoredPosition = position;
+        color.a = 0f;
+        target.color = color;
     }
 
     private void ResetAnnouncementTexts()

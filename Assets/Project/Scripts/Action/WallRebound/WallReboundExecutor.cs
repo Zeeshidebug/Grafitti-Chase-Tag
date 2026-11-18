@@ -35,7 +35,7 @@ public class WallReboundExecutor : MonoBehaviour
 
     private void Update()
     {
-        if (!IsExecuting)
+        if (!IsExecuting || GameplayPauseController.IsPaused)
             return;
 
         reboundTimer -= Time.deltaTime;
@@ -88,7 +88,8 @@ public class WallReboundExecutor : MonoBehaviour
 
         if (!staminaSystem.TryConsume(staminaCost))
         {
-            staminaHUDController.NotifyInsufficientStamina();
+            if (staminaHUDController != null)
+                staminaHUDController.NotifyInsufficientStamina();
             return false;
         }
 
