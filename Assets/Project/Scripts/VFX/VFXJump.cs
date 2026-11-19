@@ -15,13 +15,16 @@ public class JumpVFXController : MonoBehaviour
 
     private CharacterState characterState;
     private CharacterMovement movement;
+    private CharacterController capsule;
 
     private LocomotionState previousState;
+    private bool waitingForSpawnContact;
 
     private void Awake()
     {
         characterState = GetComponent<CharacterState>();
         movement = GetComponent<CharacterMovement>();
+        capsule = GetComponent<CharacterController>();
     }
 
     private void OnEnable()
@@ -39,26 +42,35 @@ public class JumpVFXController : MonoBehaviour
     {
         if (characterState == null) return;
 
-        HandleJumpLandDetection();
-
-        previousState = characterState.CurrentState;
+        var state = characterState.CurrentState;
+        if (waitingForSpawnContact)
+        {
+            // SpawnAt reenables the capsule before its next Move updates isGrounded.
+            // The initial contact at the marker should not produce a landing burst.
+            if (movement != null && movement.CurrentVelocity.y < 0f &&
+                capsule.isGrounded && state == LocomotionState.Grounded)
+                waitingForSpawnContact = false;
+        }
+        else if (previousState == LocomotionState.Airborne && state == LocomotionState.Grounded)
+        {
+            SpawnVFX(jumpLandVFX, jumpLandPoint);
+        }
+        previousState = state;
     }
 
     public void ResetForRound()
     {
         // A teleport to the next spawn is not a landing from the previous jump.
         previousState = LocomotionState.Grounded;
+        waitingForSpawnContact = true;
     }
 
-    private void OnJump() => SpawnVFX(jumpStartVFX, jumpStartPoint);
-    private void HandleJumpLandDetection()
+    private void OnJump()
     {
-        LocomotionState currentState = characterState.CurrentState;
-        if (previousState == LocomotionState.Airborne && currentState == LocomotionState.Grounded)
-        {
-            SpawnVFX(jumpLandVFX, jumpLandPoint);
-        }
+        waitingForSpawnContact = false;
+        SpawnVFX(jumpStartVFX, jumpStartPoint);
     }
+
     private void SpawnVFX(GameObject vfxPrefab, Transform point)
     {
         if (vfxPrefab == null) return;

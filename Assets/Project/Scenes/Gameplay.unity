@@ -17495,7 +17495,7 @@ MonoBehaviour:
   buffNerfController: {fileID: 922158830}
   animator: {fileID: 551695431}
   staminaHUDController: {fileID: 1814627819}
-  taggingVFXController: {fileID: 0}
+  taggingVFXController: {fileID: 922158840}
   staminaCostMultiplier: 0.5
   cooldownDuration: 5
   sprayRange: 3

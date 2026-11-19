@@ -12,7 +12,7 @@ public class BuffNerfVFXController : MonoBehaviour
     [Header("Emission Points")]
     [SerializeField] private Transform buffPoint;
     [SerializeField] private Transform nerfPoint;
-    [Tooltip("Character surface used by the two skinned mesh particle shapes.")]
+    [Tooltip("Character mesh reference for the aura Particle Systems. Their Shape modules control the emission shape.")]
     [SerializeField] private SkinnedMeshRenderer auraMesh;
     [Tooltip("Fallback path from the character Animator to the aura mesh when the scene reference is missing.")]
     [SerializeField] private string auraMeshPath;

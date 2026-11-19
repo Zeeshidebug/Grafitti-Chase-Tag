@@ -79,7 +79,7 @@ public class CharacterMovement : MonoBehaviour
 
     public void SpawnAt(Transform marker)
     {
-        ResetForRound();
+        ResetRoundState();
 
         Vector3 previousPosition = transform.position;
         characterController.enabled = false;
@@ -97,11 +97,18 @@ public class CharacterMovement : MonoBehaviour
         GetComponent<AINavMeshDriver>()?.ResetForSpawn(feet);
         GetComponent<PlayerMovementIntent>()?.OnSpawn(transform.position - previousPosition);
         characterController.enabled = true;
+        ClearTrailHistory();
     }
 
     // Called while the round cover is closed. Cancel actions before resetting
     // animation so their exit triggers cannot leak into the next round.
     public void ResetForRound()
+    {
+        ResetRoundState();
+        ClearTrailHistory();
+    }
+
+    private void ResetRoundState()
     {
         GetComponent<VaultExecutor>()?.CancelForSpawn();
         GetComponent<ClimbExecutor>()?.CancelForSpawn();
@@ -150,6 +157,12 @@ public class CharacterMovement : MonoBehaviour
         // sprint/buff systems, whose controllers toggle emission each frame.
         foreach (var particles in GetComponentsInChildren<ParticleSystem>(true))
             particles.Clear(true);
+    }
+
+    private void ClearTrailHistory()
+    {
+        // Unity can sample a moved Transform even while emission is disabled.
+        // Clear after the capsule reaches its final position for this round.
         foreach (var trail in GetComponentsInChildren<TrailRenderer>(true))
         {
             trail.emitting = false;
