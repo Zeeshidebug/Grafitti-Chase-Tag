@@ -9,6 +9,7 @@ public class RoundOutcomeVFX : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
     [SerializeField] private RectTransform outcomeTextTransform;
     [SerializeField] private TMP_Text outcomeText;
+    [SerializeField] private RoundResultPresentation resultPresentation;
 
     [Header("Animation")]
     [SerializeField] private float entranceDuration = 0.35f;
@@ -68,7 +69,7 @@ public class RoundOutcomeVFX : MonoBehaviour
         // Entrance: fade in and grow past the target size.
         float elapsed = 0f;
 
-        while (elapsed < entranceDuration)
+        while (elapsed < entranceDuration || GameplayPauseController.IsPaused)
         {
             elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
@@ -91,7 +92,7 @@ public class RoundOutcomeVFX : MonoBehaviour
         // Settle: shrink slightly after the impact.
         elapsed = 0f;
 
-        while (elapsed < settleDuration)
+        while (elapsed < settleDuration || GameplayPauseController.IsPaused)
         {
             elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
@@ -114,7 +115,7 @@ public class RoundOutcomeVFX : MonoBehaviour
         // Dramatic shake: strong at first, then gradually settles.
         elapsed = 0f;
 
-        while (elapsed < shakeDuration)
+        while (elapsed < shakeDuration || GameplayPauseController.IsPaused)
         {
             elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
 
@@ -136,6 +137,20 @@ public class RoundOutcomeVFX : MonoBehaviour
         }
 
         outcomeTextTransform.anchoredPosition = originalPosition;
+
+        if (resultPresentation != null)
+        {
+            resultPresentation.BeginImpact();
+            elapsed = 0f;
+            while (elapsed < 0.22f || GameplayPauseController.IsPaused)
+            {
+                elapsed += GameplayPauseController.UnpausedUnscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / 0.22f);
+                outcomeTextTransform.anchoredPosition = originalPosition + Vector2.down * (150f * t * t);
+                canvasGroup.alpha = 1f - t * t;
+                yield return null;
+            }
+        }
 
         animationRoutine = null;
         onComplete?.Invoke();

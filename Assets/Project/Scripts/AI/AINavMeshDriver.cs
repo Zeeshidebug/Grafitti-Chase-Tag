@@ -50,6 +50,7 @@ public class AINavMeshDriver : MonoBehaviour
     private NavMeshPath surfaceConnectionPath;
     private float nextSurfaceConnectionCheckTime;
     public bool SprintRequested => sprintRequested;
+    public bool IsWaitingForTraversal { get; private set; }
     public bool IsParkourTraversalActive => isParkourTraversalActive;
     public bool IsOnParkourSurface { get; private set; }
     public bool IsExitingParkourSurface { get; private set; }
@@ -78,6 +79,9 @@ public class AINavMeshDriver : MonoBehaviour
         // NavMesh computes paths; CharacterMovement moves the character.
         agent.updatePosition = false;
         agent.updateRotation = false;
+        // Links describe routes, while CharacterMovement and the parkour
+        // executors perform the crossing and recover the proxy on landing.
+        agent.autoTraverseOffMeshLink = false;
         agent.stoppingDistance = stoppingDistance;
     }
 
@@ -109,6 +113,8 @@ public class AINavMeshDriver : MonoBehaviour
     {
         if (GameplayPauseController.IsPaused)
             return;
+
+        IsWaitingForTraversal = false;
 
         // Planning continues while an executor owns physical movement.
         UpdateNavigationPath();
@@ -192,15 +198,22 @@ public class AINavMeshDriver : MonoBehaviour
 
         if (agent.pathPending ||
             !agent.hasPath ||
-            agent.pathStatus != NavMeshPathStatus.PathComplete)
+            agent.pathStatus == NavMeshPathStatus.PathInvalid)
         {
-            DebugNavigationStatus = "Waiting for complete path";
+            DebugNavigationStatus = "Waiting for navigation path";
             StopNavigationIntent();
             return;
         }
 
-        if (agent.remainingDistance <= agent.stoppingDistance)
+        bool partialPath = agent.pathStatus == NavMeshPathStatus.PathPartial;
+        float arrivalDistance = partialPath ? 0.15f : agent.stoppingDistance;
+        if (agent.remainingDistance <= arrivalDistance)
         {
+            if (partialPath)
+            {
+                WaitForTraversalAtPartialEnd();
+                return;
+            }
             DebugNavigationStatus = "Destination reached";
             StopNavigationIntent();
             return;
@@ -211,12 +224,18 @@ public class AINavMeshDriver : MonoBehaviour
 
         if (direction.sqrMagnitude < 0.001f)
         {
+            if (partialPath)
+            {
+                WaitForTraversalAtPartialEnd();
+                return;
+            }
+            DebugNavigationStatus = "Waiting for steering target";
             StopNavigationIntent();
             return;
         }
 
         direction.Normalize();
-        DebugNavigationStatus = "Following path";
+        DebugNavigationStatus = partialPath ? "Following partial path toward traversal" : "Following path";
 
         movementIntent.SetMovementIntent(
             direction,
@@ -263,7 +282,7 @@ public class AINavMeshDriver : MonoBehaviour
             // without calling Awake again.
             characterPath ??= new NavMeshPath();
             characterPathValid = TryCalculateNavigationPath(destination, characterPath) &&
-                characterPath.status == NavMeshPathStatus.PathComplete;
+                characterPath.status != NavMeshPathStatus.PathInvalid;
             characterPathCornerCount = characterPathValid
                 ? NavMeshPathUtility.ReadCorners(characterPath, ref characterPathCorners) : 0;
             // Corner zero is the sampled start, which may be below/behind the
@@ -354,14 +373,23 @@ public class AINavMeshDriver : MonoBehaviour
             return;
         }
 
+        // A singleton partial path contains only the sampled start. It may
+        // project below/behind a detached character; it is not a waypoint.
+        if (characterPath.status == NavMeshPathStatus.PathPartial && characterPathCornerCount < 2)
+        {
+            WaitForTraversalAtPartialEnd();
+            return;
+        }
+
         while (characterPathCornerIndex < characterPathCornerCount)
         {
             Vector3 corner = characterPathCorners[characterPathCornerIndex];
             Vector3 direction = corner - transform.position;
             direction.y = 0f;
             bool lastCorner = characterPathCornerIndex == characterPathCornerCount - 1;
+            bool partialPath = characterPath.status == NavMeshPathStatus.PathPartial;
             float arrivalDistance = lastCorner
-                ? Mathf.Max(0.05f, agent.stoppingDistance) : Mathf.Max(0.1f, agent.radius);
+                ? (partialPath ? 0.15f : Mathf.Max(0.05f, agent.stoppingDistance)) : Mathf.Max(0.1f, agent.radius);
 
             if (direction.sqrMagnitude > arrivalDistance * arrivalDistance)
             {
@@ -369,12 +397,18 @@ public class AINavMeshDriver : MonoBehaviour
                 movementIntent.SetMovementIntent(direction, direction, sprintRequested);
                 if (parkourDetector != null)
                     parkourDetector.SetObstacleDetectionDirection(direction);
-                DebugNavigationStatus = "Following path from character";
+                DebugNavigationStatus = partialPath
+                    ? "Following partial path from character" : "Following path from character";
                 return;
             }
 
             if (lastCorner)
             {
+                if (partialPath)
+                {
+                    WaitForTraversalAtPartialEnd();
+                    return;
+                }
                 Vector3 feet = transform.position +
                     CharacterControllerGeometry.GetWorldBottomOffset(characterController);
                 if (Mathf.Abs(feet.y - corner.y) <= agentProxyGroundCheckDistance)
@@ -403,6 +437,24 @@ public class AINavMeshDriver : MonoBehaviour
             if (parkourDetector != null)
                 parkourDetector.SetObstacleDetectionDirection(parkourTravelDirection);
         }
+    }
+
+    private void WaitForTraversalAtPartialEnd()
+    {
+        // A partial endpoint is the edge of reachable navigation, not arrival
+        // at the requested destination. Keep planning and let the existing
+        // detector/evaluators authorize a physical crossing. Never walk blindly
+        // beyond the NavMesh toward a wall, drop, or unsupported gap.
+        DebugNavigationStatus = "Partial path end; waiting for parkour";
+        IsWaitingForTraversal = true;
+        Vector3 direction = destination - transform.position;
+        direction.y = 0f;
+        direction = direction.sqrMagnitude > 0.001f ? direction.normalized : transform.forward;
+        // Waiting must allow stamina to regenerate. Action arbitration can
+        // still authorize a validated crossing and charge its normal cost.
+        movementIntent.SetMovementIntent(Vector3.zero, direction, false);
+        if (parkourDetector != null)
+            parkourDetector.SetObstacleDetectionDirection(direction);
     }
 
     private void OnDrawGizmosSelected()
@@ -513,6 +565,7 @@ public class AINavMeshDriver : MonoBehaviour
 
     public void ClearDestination()
     {
+        IsWaitingForTraversal = false;
         EndParkourAlignment();
         SetParkourSurfaceExit(false);
         nextSurfaceConnectionCheckTime = 0f;

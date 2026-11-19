@@ -3,6 +3,7 @@ using UnityEngine;
 [DefaultExecutionOrder(-200)]
 public class PlayerInputHandler : MonoBehaviour
 {
+    [SerializeField] private RoundController roundController;
     public Vector2 MoveInput { get; private set; }
     public bool SprintHeld { get; private set; }
     public bool JumpPressed { get; private set; }
@@ -41,7 +42,8 @@ public class PlayerInputHandler : MonoBehaviour
     private void Update()
     {
         var player = inputActions.Player;
-        bool playing = !GameplayPauseController.IsPaused;
+        bool playing = !GameplayPauseController.IsPaused &&
+            (roundController == null || roundController.CurrentState == RoundState.Playing);
         bool canInteract = playing && !FreeCursorHeld;
         MoveInput = playing ? player.Move.ReadValue<Vector2>() : Vector2.zero;
         SprintHeld = playing && player.Sprint.IsPressed();

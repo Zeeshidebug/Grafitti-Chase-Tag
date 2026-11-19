@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 4310844515107738044}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.9799801, y: -14.02, z: 3.84}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4850,6 +4850,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Spine
 --- !u!1 &5607731288137294733
 GameObject:
   m_ObjectHideFlags: 0
@@ -4878,7 +4879,7 @@ Transform:
   m_GameObject: {fileID: 5607731288137294733}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -10.5, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9700,6 +9701,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Spine/Chest/Neck/Head
 --- !u!1 &7587021991014490446
 GameObject:
   m_ObjectHideFlags: 0
@@ -9726,7 +9728,7 @@ Transform:
   m_GameObject: {fileID: 7587021991014490446}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.9799801, y: 1.9284, z: 0.006549835}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -9749,3 +9751,7 @@ MonoBehaviour:
   buffNerfController: {fileID: 0}
   buffVFX: {fileID: 6018988669075863664}
   nerfVFX: {fileID: 5096363573630972154}
+  buffPoint: {fileID: 0}
+  nerfPoint: {fileID: 0}
+  auraMesh: {fileID: 0}
+  auraMeshPath: Body

@@ -8,6 +8,7 @@ public class GameController : MonoBehaviour
     [SerializeField] private ScoreController scoreController;
     [SerializeField] private RoleController playerRoleController;
     [SerializeField] private RoleController aiRoleController;
+    [SerializeField] private RoundTransitionController roundEntry;
 
     [Header("Round Spawn Points (feet)")]
     [SerializeField] private Transform spawnPointA1;
@@ -29,6 +30,7 @@ public class GameController : MonoBehaviour
 
     // Pengaman agar hasil ronde tidak diproses dua kali.
     private bool resultProcessedForCurrentRound;
+    private bool roundPrepared;
 
     public int CurrentRound => currentRound;
     public int NextRoundNumber => currentRound + 1;
@@ -50,6 +52,7 @@ public class GameController : MonoBehaviour
             return;
 
         currentRound = 0;
+        MatchResultData.Reset();
         gameStatus = GameStatus.Playing;
 
         StartNextRound();
@@ -57,8 +60,16 @@ public class GameController : MonoBehaviour
 
     private void StartNextRound()
     {
-        if (gameStatus != GameStatus.Playing)
-            return;
+        if (!PrepareNextRound()) return;
+        if (roundEntry != null) roundEntry.PlayPreparedRoundEntry();
+        else BeginPreparedRound();
+    }
+
+    // Called only while the entry/result cover hides the characters.
+    public bool PrepareNextRound()
+    {
+        if (gameStatus != GameStatus.Playing || roundPrepared ||
+            (currentRound > 0 && !resultProcessedForCurrentRound)) return false;
 
         // Role baru dirotasi setelah ronde pertama.
         if (currentRound > 0)
@@ -67,16 +78,28 @@ public class GameController : MonoBehaviour
         currentRound++;
         resultProcessedForCurrentRound = false;
 
-        Debug.Log($"ROUND {currentRound} STARTING");
-
+        roundPrepared = true;
+        roundController.PrepareRound();
         PositionCharactersForRound();
+        return true;
+    }
+
+    public void BeginPreparedRound()
+    {
+        if (gameStatus != GameStatus.Playing || !roundPrepared) return;
+        roundPrepared = false;
+        Debug.Log($"ROUND {currentRound} STARTING");
         roundController.StartRound();
     }
 
     private void PositionCharactersForRound()
     {
         if (!spawnPointA1 && !spawnPointA2 && !spawnPointB1 && !spawnPointB2)
+        {
+            playerRoleController.GetComponent<CharacterMovement>()?.ResetForRound();
+            aiRoleController.GetComponent<CharacterMovement>()?.ResetForRound();
             return;
+        }
 
         if (!spawnPointA1 || !spawnPointA2 || !spawnPointB1 || !spawnPointB2)
         {
@@ -119,6 +142,17 @@ public class GameController : MonoBehaviour
         }
 
         return false;
+    }
+
+    // Predict the final round without changing score or roles; the normal guarded
+    // ProcessRoundResult remains the only place that awards a point.
+    public bool WillFinishMatch(RoundWinner winner)
+    {
+        if (gameStatus != GameStatus.Playing || winner == RoundWinner.None) return false;
+        bool playerScores = IsRoleWinner(winner, playerRoleController.CurrentRole);
+        int player = PlayerScore + (playerScores ? 1 : 0);
+        int ai = AIScore + (!playerScores && IsRoleWinner(winner, aiRoleController.CurrentRole) ? 1 : 0);
+        return player >= roundsToWin || ai >= roundsToWin || currentRound >= maxRounds;
     }
 
     /// Menentukan siapa yang mendapatkan poin,

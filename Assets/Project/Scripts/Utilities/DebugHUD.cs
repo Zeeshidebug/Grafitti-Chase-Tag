@@ -32,7 +32,7 @@ public class DebugHUD : MonoBehaviour
     [SerializeField] private float graphHeight = 110f;
     [SerializeField] private float graphMargin = 20f;
 
-    private bool showDebug = true;
+    private bool showDebug = false;
 
     private enum DebugPage
     {
@@ -488,6 +488,7 @@ public class DebugHUD : MonoBehaviour
         GUILayout.Label(
             $"Navigation: {(navMeshDriver.IsProxyDetached ? "Proxy" : "Synced")} | " +
             $"Parkour Exit: {navMeshDriver.IsExitingParkourSurface}");
+        GUILayout.Label($"Movement: {navMeshDriver.DebugNavigationStatus}");
 
         GUILayout.Space(2f);
         GUILayout.Label("UTILITY SCORES");
@@ -521,37 +522,32 @@ public class DebugHUD : MonoBehaviour
     }
 
     private void DrawAITokenPage()
-{
-    GUILayout.Space(4f);
-    GUILayout.Label("TOKEN AWARENESS");
-    GUILayout.Label("--------------------------------");
-
-    if (aiController == null)
     {
-        GUILayout.Label("AI Controller: Not Assigned!");
-        return;
+
+        GUILayout.Space(4f);
+        GUILayout.Label("TOKEN AWARENESS");
+        GUILayout.Label("------------------------------");
+        if (aiController == null)
+        {
+            GUILayout.Label("AI Controller: Not Assigned");
+            return;
+        }
+        GUILayout.Label(
+            $"Scanned: {aiController.DebugTokenScannedCount} | " +
+            $"Viable: {aiController.DebugTokenViableCount}");
+        GUILayout.Label(
+            $"Best: {aiController.DebugBestTokenName} " +
+            $"({aiController.DebugBestTokenScore:F2})");
+        GUILayout.Label($"Target: {aiController.DebugCurrentTokenTarget}");
+        GUILayout.Label($"Target lock: {aiController.DebugTokenTargetLock}");
+        GUILayout.Label($"Status: {aiController.DebugTokenStatus}");
+        GUILayout.Label($"Decision: {aiController.DebugTokenDecision}");
+
+        foreach (string candidate in aiController.DebugTokenCandidateLines)
+        {
+            GUILayout.Label(candidate);
+        }
     }
-
-    GUILayout.Label(
-        $"Scanned: {aiController.DebugTokenScannedCount} | " +
-        $"Viable: {aiController.DebugTokenViableCount}"
-    );
-
-    GUILayout.Label(
-        $"Best: {aiController.DebugBestTokenName} " +
-        $"({aiController.DebugBestTokenScore:F2})"
-    );
-
-    GUILayout.Label($"Target: {aiController.DebugCurrentTokenTarget}");
-    GUILayout.Label($"Target Lock: {aiController.DebugTokenTargetLock}");
-    GUILayout.Label($"Status: {aiController.DebugTokenStatus}");
-    GUILayout.Label($"Decision: {aiController.DebugTokenDecision}");
-
-    foreach (string candidate in aiController.DebugTokenCandidateLines)
-    {
-        GUILayout.Label(candidate);
-    }
-}
 
 
     private void DrawUtilityCurveGraph(

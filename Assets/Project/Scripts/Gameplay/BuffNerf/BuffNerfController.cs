@@ -7,6 +7,12 @@ public class BuffNerfController : MonoBehaviour
     private readonly List<ActiveBuffNerfEffect> activeEffects = new();
     public IReadOnlyList<ActiveBuffNerfEffect> ActiveEffects => activeEffects;
 
+    public void ResetForRound()
+    {
+        StopAllCoroutines();
+        activeEffects.Clear();
+    }
+
     public void ApplyEffect(BuffNerfEffect effect)
     {
         ActiveBuffNerfEffect existingEffect = null;

@@ -46,6 +46,12 @@ public class TaggingController : MonoBehaviour
     public bool IsOnCooldown =>
         cooldownTimer > 0f;
 
+    public void ResetForRound()
+    {
+        cooldownTimer = 0f;
+        taggingVFXController?.ResetForRound();
+    }
+
     private void Update()
     {
         if (cooldownTimer > 0f)

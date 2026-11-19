@@ -41,7 +41,7 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3159794286071528131}
   serializedVersion: 8
-  lengthInSec: 0.7
+  lengthInSec: 0.9
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 0
@@ -287,7 +287,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0.5
+      scalar: 1
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -4941,7 +4941,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5538463250373023405, guid: 47047ef85d5b2a14ba1e7a018254aaf2, type: 3}
       propertyPath: InitialModule.maxNumParticles
-      value: 6
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 7186250417547795315, guid: 47047ef85d5b2a14ba1e7a018254aaf2, type: 3}
       propertyPath: m_LocalScale.x

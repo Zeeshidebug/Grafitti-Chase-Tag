@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class TaggingVFXController : MonoBehaviour
 {
+    [Header("Emission Points")]
+    [SerializeField] private Transform leftSprayPoint;
+    [SerializeField] private Transform rightSprayPoint;
+
     [Header("Normal Spray")]
     [SerializeField] private ParticleSystem sprayNormalLeft;
     [SerializeField] private ParticleSystem sprayNormalRight;
@@ -103,6 +107,11 @@ public class TaggingVFXController : MonoBehaviour
 
         yield return new WaitForSeconds(sprayStartTime);
 
+        FollowTarget.Bind(sprayLeft, leftSprayPoint, null);
+        FollowTarget.Bind(fogLeft, leftSprayPoint, null);
+        FollowTarget.Bind(sprayRight, rightSprayPoint, null);
+        FollowTarget.Bind(fogRight, rightSprayPoint, null);
+
         // Mainkan spray kiri dan kanan.
         if (sprayLeft != null)
             sprayLeft.Play(false);
@@ -186,7 +195,7 @@ public class TaggingVFXController : MonoBehaviour
         );
     }
 
-    private void OnDisable()
+    public void ResetForRound()
     {
         if (sprayCoroutine != null)
         {
@@ -198,4 +207,6 @@ public class TaggingVFXController : MonoBehaviour
             ParticleSystemStopBehavior.StopEmittingAndClear
         );
     }
+
+    private void OnDisable() => ResetForRound();
 }

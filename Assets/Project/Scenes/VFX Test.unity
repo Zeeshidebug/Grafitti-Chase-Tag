@@ -385,7 +385,7 @@ Transform:
   m_GameObject: {fileID: 134887215}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: -1.618, z: -0.548}
+  m_LocalPosition: {x: -0.048636913, y: -1.5400915, z: -0.5387392}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -404,6 +404,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 448545098}
+  playerRelativePath: Armature/Bone/Thigh.L/Calf.L/Angkle.L/Toe.L
 --- !u!96 &134887218
 TrailRenderer:
   serializedVersion: 4
@@ -960,7 +961,7 @@ Transform:
   m_GameObject: {fileID: 190102547}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: -1.571, z: 0.595}
+  m_LocalPosition: {x: -0.044849157, y: -1.5378172, z: 0.58556175}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -979,6 +980,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 2087263410}
+  playerRelativePath: Armature/Bone/Thigh.R/Calf.R/Angkle.R/Toe.R
 --- !u!96 &190102550
 TrailRenderer:
   serializedVersion: 4
@@ -1329,6 +1331,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -3767722493925674911, guid: 594dec465d5e5334395b2bb07216bfec, type: 3}
   m_PrefabInstance: {fileID: 176323255}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &283959084
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 283959085}
+  m_Layer: 10
+  m_Name: Jump Ground Point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &283959085
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283959084}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -1.76, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 922158804}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &311285219
 GameObject:
   m_ObjectHideFlags: 0
@@ -2110,7 +2143,7 @@ Transform:
   m_GameObject: {fileID: 413746554}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7198048, y: -0, z: -0, w: 0.69417655}
-  m_LocalPosition: {x: -0.15, y: -14.98, z: 8.886459}
+  m_LocalPosition: {x: -0.048636913, y: -1.5400915, z: -0.5387392}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2129,6 +2162,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 448545098}
+  playerRelativePath: Armature/Bone/Thigh.L/Calf.L/Angkle.L/Toe.L
 --- !u!199 &413746557
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -7546,6 +7580,14 @@ MonoBehaviour:
   - {fileID: 945499688}
   - {fileID: 190102550}
   - {fileID: 1141197836}
+  sprintParticlePoints:
+  - {fileID: 448545098}
+  - {fileID: 2087263410}
+  sprintTrailPoints:
+  - {fileID: 448545098}
+  - {fileID: 742292689}
+  - {fileID: 2087263410}
+  - {fileID: 1712295104}
 --- !u!1 &640271679
 GameObject:
   m_ObjectHideFlags: 0
@@ -7687,6 +7729,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TagReceiver
   roundController: {fileID: 1814627813}
+  tagSmokeMain: {fileID: 0}
+  tagSmokePoint: {fileID: 0}
 --- !u!1 &651097876
 GameObject:
   m_ObjectHideFlags: 0
@@ -7963,6 +8007,9 @@ MonoBehaviour:
   roundOutcomeVFX: {fileID: 1640035471}
   roundResultPanelUI: {fileID: 1336963787}
   gameController: {fileID: 1814627815}
+  gameplayHUD: {fileID: 0}
+  entryPresentation: {fileID: 0}
+  resultPresentation: {fileID: 0}
   wipeImage: {fileID: 1233653873}
   wipeOpenPosition: {x: 2000, y: 0}
   wipeClosedPosition: {x: 0, y: 0}
@@ -8982,6 +9029,7 @@ Transform:
   - {fileID: 499101373}
   - {fileID: 635307030}
   - {fileID: 2098409224}
+  - {fileID: 283959085}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &922158806
@@ -9020,6 +9068,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11a762bdedf66a24f97d4202df9c0ade, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputHandler
+  roundController: {fileID: 0}
 --- !u!143 &922158808
 CharacterController:
   m_ObjectHideFlags: 0
@@ -9107,13 +9156,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ca08b568e2a6384983674269360365b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VaultEvaluator
+  movementIntent: {fileID: 0}
   minVaultHeightRatio: 0.05
   maxVaultHeightRatio: 0.85
   clearanceMarginRatio: 0.1
   vaultClearance: 0.3
   landingDistanceRatio: 0.4
+  landingExtraClearance: 0.25
+  landingRunoutDistance: 2
   maxLandingDrop: 5
   maxLandingSlope: 45
+  logTrajectoryDebug: 0
   walkableSurfaceLayer:
     serializedVersion: 2
     m_Bits: 128
@@ -9153,6 +9206,8 @@ MonoBehaviour:
   staminaCostRate: 0.3
   animator: {fileID: 551695431}
   staminaHUDController: {fileID: 1814627819}
+  logVaultDiagnostics: 1
+  navMeshSampleRadius: 2
 --- !u!114 &922158816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9204,6 +9259,7 @@ MonoBehaviour:
   standingClearanceLayer:
     serializedVersion: 2
     m_Bits: 64
+  navMeshSampleRadius: 2
 --- !u!114 &922158819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9240,6 +9296,7 @@ MonoBehaviour:
   staminaHUDController: {fileID: 1814627819}
   climbDuration: 0.4
   staminaCostMultiplier: 0.3
+  navMeshSampleRadius: 2
 --- !u!114 &922158821
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9252,6 +9309,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cbfb90cf2a25ba4ea86d069f65dc7cc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ClimbEvaluator
+  directClimbExtraHeight: 0.75
+  jumpClimbExtraHeight: 1.75
+  minimumJumpObstacleHeight: 0.25
 --- !u!114 &922158822
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9431,6 +9491,7 @@ MonoBehaviour:
   buffNerfController: {fileID: 922158830}
   animator: {fileID: 551695431}
   staminaHUDController: {fileID: 1814627819}
+  taggingVFXController: {fileID: 0}
   staminaCostMultiplier: 0.5
   cooldownDuration: 5
   sprayRange: 3
@@ -9438,6 +9499,7 @@ MonoBehaviour:
   targetLayer:
     serializedVersion: 2
     m_Bits: 1024
+  proximityTarget: {fileID: 0}
 --- !u!114 &922158834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9451,6 +9513,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TagReceiver
   roundController: {fileID: 1814627813}
+  tagSmokeMain: {fileID: 0}
+  tagSmokePoint: {fileID: 0}
 --- !u!114 &922158835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9479,6 +9543,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::JumpVFXController
   jumpStartVFX: {fileID: 5814529201629791988, guid: 75bfc08ecb23cec4fabc9592835973f6, type: 3}
   jumpLandVFX: {fileID: 1862962688793472636, guid: 6165ecf0cd3de7a4293a48a94a676dd3, type: 3}
+  jumpStartPoint: {fileID: 283959085}
+  jumpLandPoint: {fileID: 283959085}
   groundOffset: -0.9
   destroyDelay: 2
 --- !u!1 &945499685
@@ -9508,7 +9574,7 @@ Transform:
   m_GameObject: {fileID: 945499685}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: 1.8210001, z: -0.71500015}
+  m_LocalPosition: {x: 0.04462242, y: 2.000661, z: -0.7159319}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9527,6 +9593,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 742292689}
+  playerRelativePath: Armature/Bone/Spine/Chest/Shoulder.L/UpperArm.L/Forearm.L/Hand.L
 --- !u!96 &945499688
 TrailRenderer:
   serializedVersion: 4
@@ -10281,6 +10348,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 984164576}
+  playerRelativePath: Armature/Bone/Spine
 --- !u!199 &1036541398
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -15093,7 +15161,7 @@ Transform:
   m_GameObject: {fileID: 1036541396}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.9799801, y: -14.02, z: 3.84}
+  m_LocalPosition: {x: 0.0008518696, y: 2.097969, z: 0.009794712}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15387,7 +15455,7 @@ Transform:
   m_GameObject: {fileID: 1141197832}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: 1.8209996, z: 0.72000027}
+  m_LocalPosition: {x: 0.048103094, y: 2.0104756, z: 0.7006178}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15406,6 +15474,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 1712295104}
+  playerRelativePath: Armature/Bone/Spine/Chest/Shoulder.R/UpperArm.R/Forearm.R/Hand.R
 --- !u!96 &1141197836
 TrailRenderer:
   serializedVersion: 4
@@ -16429,7 +16498,7 @@ Transform:
   m_GameObject: {fileID: 1535171757}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -10.5, z: 0}
+  m_LocalPosition: {x: -0.00172472, y: 3.3504348, z: 0.011333942}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -16448,6 +16517,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 1503444509}
+  playerRelativePath: Armature/Bone/Spine/Chest/Neck/Head
 --- !u!199 &1535171760
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -21321,6 +21391,7 @@ MonoBehaviour:
   canvasGroup: {fileID: 1640035470}
   outcomeTextTransform: {fileID: 158745459}
   outcomeText: {fileID: 158745460}
+  resultPresentation: {fileID: 0}
   entranceDuration: 0.35
   settleDuration: 0.12
   shakeDuration: 0.2
@@ -21791,6 +21862,13 @@ MonoBehaviour:
   aiRole: {fileID: 640271680}
   playerRole: {fileID: 922158831}
   scoreController: {fileID: 1814627816}
+  aiController: {fileID: 0}
+  staminaEvaluator: {fileID: 0}
+  navMeshDriver: {fileID: 0}
+  showUtilityGraphs: 1
+  graphWidth: 260
+  graphHeight: 110
+  graphMargin: 20
 --- !u!114 &1786466197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21803,6 +21881,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11a762bdedf66a24f97d4202df9c0ade, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputHandler
+  roundController: {fileID: 0}
 --- !u!1001 &1798354945
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21931,8 +22010,16 @@ MonoBehaviour:
   scoreController: {fileID: 1814627816}
   playerRoleController: {fileID: 922158831}
   aiRoleController: {fileID: 640271680}
+  roundEntry: {fileID: 0}
+  spawnPointA1: {fileID: 0}
+  spawnPointA2: {fileID: 0}
+  spawnPointB1: {fileID: 0}
+  spawnPointB2: {fileID: 0}
   maxRounds: 5
   roundsToWin: 3
+  manualRoleAssignment: 0
+  manualPlayerRole: 1
+  manualAIRole: 2
 --- !u!114 &1814627816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21983,6 +22070,9 @@ MonoBehaviour:
   raycastDistance: 100
   clearanceRadius: 0.5
   groundOffset: 1.5
+  navigationAgent: {fileID: 0}
+  navigationAnchor: {fileID: 0}
+  navigationTolerance: 0.5
 --- !u!114 &1814627818
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -22014,6 +22104,7 @@ MonoBehaviour:
   staminaBar: {fileID: 1083544400}
   staminaBarTransform: {fileID: 1083544399}
   warningText: {fileID: 868010932748903462}
+  staminaBorder: {fileID: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   warningColor: {r: 1, g: 0, b: 0, a: 1}
   shakeDuration: 0.25
@@ -22046,6 +22137,12 @@ MonoBehaviour:
   timerText: {fileID: 1508648008}
   chaserColor: {r: 1, g: 0, b: 0, a: 1}
   evaderColor: {r: 0, g: 1, b: 1, a: 1}
+  playerRoleBackground: {fileID: 0}
+  enemyRoleBackground: {fileID: 0}
+  leftChaser: {fileID: 0}
+  leftEvader: {fileID: 0}
+  rightChaser: {fileID: 0}
+  rightEvader: {fileID: 0}
 --- !u!1 &1822643050
 GameObject:
   m_ObjectHideFlags: 0
@@ -22533,7 +22630,7 @@ Transform:
   m_GameObject: {fileID: 2023613133}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7198048, y: -0, z: -0, w: 0.69417655}
-  m_LocalPosition: {x: -0.15, y: -14.98, z: 8.886459}
+  m_LocalPosition: {x: -0.044849157, y: -1.5378172, z: 0.58556175}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22552,6 +22649,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 2087263410}
+  playerRelativePath: Armature/Bone/Thigh.R/Calf.R/Angkle.R/Toe.R
 --- !u!199 &2023613136
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -27598,7 +27696,7 @@ Transform:
   m_GameObject: {fileID: 2098409223}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.9799801, y: 1.9284, z: 0.006549835}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -27621,6 +27719,10 @@ MonoBehaviour:
   buffNerfController: {fileID: 922158830}
   buffVFX: {fileID: 1036541399}
   nerfVFX: {fileID: 1535171761}
+  buffPoint: {fileID: 984164576}
+  nerfPoint: {fileID: 1503444509}
+  auraMesh: {fileID: 2131713049}
+  auraMeshPath: Body
 --- !u!137 &2131713049 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1630794972795428178, guid: 412d09f94bdde1d44ad8231a320b7c4c, type: 3}

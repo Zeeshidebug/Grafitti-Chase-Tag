@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class BuffNerfSpawner : MonoBehaviour
 {
@@ -21,6 +22,13 @@ public class BuffNerfSpawner : MonoBehaviour
     [SerializeField] private float raycastDistance = 100f;
     [SerializeField] private float clearanceRadius = 0.5f;
     [SerializeField] private float groundOffset = 0.1f;
+
+    [Header("Optional Arena Navigation Constraint")]
+    [Tooltip("When assigned, random tokens require a nearby point on this agent's NavMesh and a complete path from the arena anchor.")]
+    [SerializeField] private NavMeshAgent navigationAgent;
+    [SerializeField] private Transform navigationAnchor;
+    [SerializeField, Min(0.01f)] private float navigationTolerance = 0.5f;
+    private NavMeshPath spawnPath;
 
     private readonly List<GameObject> spawnedTokens = new();
 
@@ -119,25 +127,23 @@ public class BuffNerfSpawner : MonoBehaviour
 
     private List<BuffNerfToken> GetUniqueTokenPrefabs()
     {
+        // Shuffle the full pool first so both buff and nerf variants can be
+        // selected. Keep at most one token for each stat in a single wave.
+        List<BuffNerfToken> candidates = new();
+        HashSet<BuffNerfToken> seenPrefabs = new();
+        foreach (BuffNerfToken prefab in tokenPrefabs)
+            if (prefab != null && prefab.EffectData != null && seenPrefabs.Add(prefab))
+                candidates.Add(prefab);
+        Shuffle(candidates);
+
         List<BuffNerfToken> uniqueTokens = new();
         HashSet<StatType> usedTypes = new();
 
-        foreach (BuffNerfToken prefab in tokenPrefabs)
+        foreach (BuffNerfToken prefab in candidates)
         {
-            if (prefab == null)
-                continue;
-
             if (usedTypes.Add(prefab.StatType))
             {
                 uniqueTokens.Add(prefab);
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"BuffNerfSpawner: Duplicate token type " +
-                    $"found on prefab {prefab.name}.",
-                    prefab
-                );
             }
         }
 
@@ -187,6 +193,9 @@ public class BuffNerfSpawner : MonoBehaviour
             Vector3 candidatePosition =
                 hit.point + Vector3.up * groundOffset;
 
+            if (!IsNavigableGround(hit.point))
+                continue;
+
             if (IsTooCloseToOtherTokens(candidatePosition))
                 continue;
 
@@ -198,6 +207,24 @@ public class BuffNerfSpawner : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool IsNavigableGround(Vector3 groundPoint)
+    {
+        // Existing scenes retain their authored physics-only placement.
+        if (navigationAgent == null) return true;
+        if (navigationAnchor == null) return false;
+        var filter = new NavMeshQueryFilter
+        {
+            agentTypeID = navigationAgent.agentTypeID,
+            areaMask = navigationAgent.areaMask
+        };
+        if (!NavMesh.SamplePosition(groundPoint, out var target, navigationTolerance, filter) ||
+            !NavMesh.SamplePosition(navigationAnchor.position, out var start, 1f, filter))
+            return false;
+        spawnPath ??= new NavMeshPath();
+        return NavMesh.CalculatePath(start.position, target.position, filter, spawnPath) &&
+            spawnPath.status == NavMeshPathStatus.PathComplete;
     }
 
     private bool IsTooCloseToOtherTokens(Vector3 position)
