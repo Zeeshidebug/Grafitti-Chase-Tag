@@ -8,6 +8,7 @@ public class TagReceiver : MonoBehaviour
 
     [Header("Tag VFX")]
     [SerializeField] private ParticleSystem tagSmokeMain;
+    [SerializeField] private Transform tagSmokePoint;
 
     public bool RoundIsPlaying =>
         roundController != null &&
@@ -27,6 +28,7 @@ public class TagReceiver : MonoBehaviour
         // Play tag smoke effectg
         if (tagSmokeMain != null)
         {
+            FollowTarget.Bind(tagSmokeMain, tagSmokePoint, null);
             tagSmokeMain.Play(true);
         }
 

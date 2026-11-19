@@ -7428,7 +7428,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.047065165, y: -0.00000003068548, z: 0.0000000014458195, w: 0.99889183}
-  m_LocalPosition: {x: 0.000000026359885, y: 2.9793425, z: 2.5138435}
+  m_LocalPosition: {x: 23.6, y: 3.3395834, z: 16.239525}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14571,7 +14571,7 @@ Transform:
   m_GameObject: {fileID: 640271679}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2166.1, y: 2, z: 2034.2}
+  m_LocalPosition: {x: 16.66, y: 2, z: -14.79}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -14592,6 +14592,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TagReceiver
   roundController: {fileID: 1814627813}
   tagSmokeMain: {fileID: 0}
+  tagSmokePoint: {fileID: 0}
 --- !u!114 &640271686
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17755,7 +17756,7 @@ Transform:
   m_GameObject: {fileID: 922158800}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalPosition: {x: 23.6, y: 2, z: 17.54}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -18244,6 +18245,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TagReceiver
   roundController: {fileID: 1814627813}
   tagSmokeMain: {fileID: 0}
+  tagSmokePoint: {fileID: 0}
 --- !u!114 &922158835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24307,7 +24309,7 @@ Transform:
   m_GameObject: {fileID: 1021428247}
   serializedVersion: 2
   m_LocalRotation: {x: 0.047065165, y: -0.00000003068548, z: 0.0000000014458194, w: 0.9988919}
-  m_LocalPosition: {x: 0, y: 5, z: -9}
+  m_LocalPosition: {x: 23.6, y: 5, z: 8.540001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -32657,6 +32659,9 @@ MonoBehaviour:
   raycastDistance: 100
   clearanceRadius: 0.5
   groundOffset: 1.5
+  navigationAgent: {fileID: 0}
+  navigationAnchor: {fileID: 0}
+  navigationTolerance: 0.5
 --- !u!114 &1814627818
 MonoBehaviour:
   m_ObjectHideFlags: 0

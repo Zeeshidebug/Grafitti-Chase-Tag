@@ -7,67 +7,64 @@ public class JumpVFXController : MonoBehaviour
     [SerializeField] private GameObject jumpLandVFX;
 
     [Header("VFX Position Settings")]
+    [SerializeField] private Transform jumpStartPoint;
+    [SerializeField] private Transform jumpLandPoint;
+    [Tooltip("Vertical offset from character origin when no emission point is assigned.")]
     [SerializeField] private float groundOffset = -0.9f;
     [SerializeField] private float destroyDelay = 2.0f;
 
-    private PlayerInputHandler inputHandler;
     private CharacterState characterState;
-    private CharacterController characterController;
+    private CharacterMovement movement;
 
     private LocomotionState previousState;
-    private bool wasGroundedLastFrame;
 
     private void Awake()
     {
-        inputHandler = GetComponent<PlayerInputHandler>();
         characterState = GetComponent<CharacterState>();
-        characterController = GetComponent<CharacterController>();
+        movement = GetComponent<CharacterMovement>();
     }
 
-    private void Start()
+    private void OnEnable()
     {
         if (characterState != null) previousState = characterState.CurrentState;
-        if (characterController != null) wasGroundedLastFrame = characterController.isGrounded;
+        if (movement != null) movement.Jumped += OnJump;
     }
 
-    private void Update()
+    private void OnDisable()
     {
-        if (inputHandler == null || characterState == null || characterController == null) return;
+        if (movement != null) movement.Jumped -= OnJump;
+    }
 
-        HandleJumpStartDetecion();
+    private void LateUpdate()
+    {
+        if (characterState == null) return;
+
         HandleJumpLandDetection();
 
         previousState = characterState.CurrentState;
-        wasGroundedLastFrame = characterController.isGrounded;
     }
 
     public void ResetForRound()
     {
         // A teleport to the next spawn is not a landing from the previous jump.
         previousState = LocomotionState.Grounded;
-        wasGroundedLastFrame = true;
     }
-    private void HandleJumpStartDetecion()
-    {
-        if (inputHandler.JumpPressed && wasGroundedLastFrame && characterState.CurrentState == LocomotionState.Grounded)
-        {
-            SpawnVFX(jumpStartVFX);
-        }
-    }
+
+    private void OnJump() => SpawnVFX(jumpStartVFX, jumpStartPoint);
     private void HandleJumpLandDetection()
     {
         LocomotionState currentState = characterState.CurrentState;
         if (previousState == LocomotionState.Airborne && currentState == LocomotionState.Grounded)
         {
-            SpawnVFX(jumpLandVFX);
+            SpawnVFX(jumpLandVFX, jumpLandPoint);
         }
     }
-    private void SpawnVFX(GameObject vfxPrefab)
+    private void SpawnVFX(GameObject vfxPrefab, Transform point)
     {
         if (vfxPrefab == null) return;
-        Vector3 spawnPosition = new Vector3(transform.position.x, transform.position.y + groundOffset, transform.position.z);
+        Vector3 spawnPosition = point != null ? point.position : transform.position + Vector3.up * groundOffset;
         
-        GameObject spawnedInstance = Instantiate(vfxPrefab, spawnPosition, Quaternion.identity);
+        GameObject spawnedInstance = Instantiate(vfxPrefab, spawnPosition, point != null ? point.rotation : Quaternion.identity);
 
         Destroy(spawnedInstance, destroyDelay);
     }

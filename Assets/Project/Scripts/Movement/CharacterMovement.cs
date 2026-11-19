@@ -41,6 +41,8 @@ public class CharacterMovement : MonoBehaviour
     private float verticalVelocity;
 
     public float CurrentSpeed => currentSpeed;
+    public Animator CharacterAnimator => animator;
+    public event System.Action Jumped;
     public float SprintSpeed => sprintSpeed;
     public float JumpHeight => jumpHeight;
     public Vector3 CurrentVelocity { get; private set; }
@@ -433,6 +435,7 @@ public class CharacterMovement : MonoBehaviour
         if (animator != null)
             animator.SetTrigger("JumpIn");
 
+        Jumped?.Invoke();
         return true;
     }
 

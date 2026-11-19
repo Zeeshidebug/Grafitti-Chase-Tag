@@ -60,6 +60,8 @@ MonoBehaviour:
   - {fileID: 14560335269478767}
   - {fileID: 9056610439851925996}
   - {fileID: 5658116091526157081}
+  sprintParticlePoints: []
+  sprintTrailPoints: []
 --- !u!1 &2627928559374560744
 GameObject:
   m_ObjectHideFlags: 0
@@ -87,7 +89,7 @@ Transform:
   m_GameObject: {fileID: 2627928559374560744}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: -1.618, z: -0.548}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -106,6 +108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Thigh.L/Calf.L/Angkle.L/Toe.L
 --- !u!96 &2005746387479910291
 TrailRenderer:
   serializedVersion: 4
@@ -253,7 +256,7 @@ Transform:
   m_GameObject: {fileID: 4219188552868722173}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7198048, y: -0, z: -0, w: 0.69417655}
-  m_LocalPosition: {x: -0.15, y: -14.98, z: 8.886459}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5093,6 +5096,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Thigh.L/Calf.L/Angkle.L/Toe.L
 --- !u!1 &5412508379201902268
 GameObject:
   m_ObjectHideFlags: 0
@@ -5120,7 +5124,7 @@ Transform:
   m_GameObject: {fileID: 5412508379201902268}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: 1.8210001, z: -0.71500015}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5139,6 +5143,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Spine/Chest/Shoulder.L/UpperArm.L/Forearm.L/Hand.L
 --- !u!96 &14560335269478767
 TrailRenderer:
   serializedVersion: 4
@@ -5285,7 +5290,7 @@ Transform:
   m_GameObject: {fileID: 7930539819461102330}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: -1.571, z: 0.595}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5304,6 +5309,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Thigh.R/Calf.R/Angkle.R/Toe.R
 --- !u!96 &9056610439851925996
 TrailRenderer:
   serializedVersion: 4
@@ -5451,7 +5457,7 @@ Transform:
   m_GameObject: {fileID: 8153588621203104728}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7198048, y: -0, z: -0, w: 0.69417655}
-  m_LocalPosition: {x: -0.15, y: -14.98, z: 8.886459}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10291,6 +10297,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Thigh.R/Calf.R/Angkle.R/Toe.R
 --- !u!1 &8393222516862434397
 GameObject:
   m_ObjectHideFlags: 0
@@ -10318,7 +10325,7 @@ Transform:
   m_GameObject: {fileID: 8393222516862434397}
   serializedVersion: 2
   m_LocalRotation: {x: 0.00000005960463, y: 0.000000012841615, z: -0.000000005268356, w: 1}
-  m_LocalPosition: {x: 0.055999994, y: 1.8209996, z: 0.72000027}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10337,6 +10344,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FollowTarget
   targetBone: {fileID: 0}
+  playerRelativePath: Armature/Bone/Spine/Chest/Shoulder.R/UpperArm.R/Forearm.R/Hand.R
 --- !u!96 &5658116091526157081
 TrailRenderer:
   serializedVersion: 4
